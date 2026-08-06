@@ -165,6 +165,76 @@
   }
   .add-set-btn:active { background: var(--surface-2); }
 
+  /* ---------- Aux cards: gym time, warm-up, stretch ---------- */
+  .aux-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .time-card { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .clock-cell { display: flex; flex-direction: column; gap: 8px; }
+  .aux-label {
+    color: var(--muted); font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .clock-btn {
+    background: var(--surface-2);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 15px;
+    padding: 12px 8px;
+  }
+  .clock-btn:active { background: var(--bg); }
+  .time-card input[type="time"] {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    color-scheme: dark;
+    font-size: 17px;
+    padding: 9px 10px;
+    width: 100%;
+    text-align: center;
+  }
+  .duration-note { grid-column: 1 / -1; color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+  .aux-head { margin-bottom: 10px; }
+  .aux-title {
+    font-family: var(--display);
+    font-weight: 600; font-size: 21px;
+    letter-spacing: 0.02em;
+  }
+  .warmup-row, .stretch-row { display: flex; gap: 8px; }
+  .warmup-row input, .stretch-row input {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 16px;
+    padding: 10px;
+    min-width: 0;
+  }
+  .warmup-row input:first-child { flex: 2.2; }
+  .warmup-row input:last-child { flex: 1; text-align: center; }
+  .chip {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 14.5px;
+    padding: 10px 0;
+  }
+  .chip.active {
+    background: var(--pc, var(--ink));
+    border-color: var(--pc, var(--ink));
+    color: #101114;
+    font-weight: 700;
+  }
+  .stretch-row input { flex: 1; text-align: center; }
+
   /* ---------- Add exercise ---------- */
   .add-exercise { position: relative; margin-top: 18px; }
   .add-exercise input {
@@ -274,11 +344,45 @@
       <span class="session-date" id="session-date"></span>
     </div>
     <p class="prefill-note" id="prefill-note"></p>
+
+    <div class="aux-card time-card">
+      <div class="clock-cell">
+        <span class="aux-label">Clock in</span>
+        <button class="clock-btn" id="clockin-btn">Tap on arrival</button>
+        <input type="time" id="clockin-input" hidden aria-label="Clock-in time (IST)">
+      </div>
+      <div class="clock-cell">
+        <span class="aux-label">Clock out</span>
+        <button class="clock-btn" id="clockout-btn">Tap when done</button>
+        <input type="time" id="clockout-input" hidden aria-label="Clock-out time (IST)">
+      </div>
+      <p class="duration-note" id="duration-note" hidden></p>
+    </div>
+
+    <div class="aux-card">
+      <div class="aux-head"><span class="aux-title">Warm-up</span></div>
+      <div class="warmup-row">
+        <input type="text" id="warmup-activity" placeholder="Activity (treadmill, cycling…)"
+               autocomplete="off" autocapitalize="words" aria-label="Warm-up activity">
+        <input type="text" id="warmup-mins" inputmode="numeric" placeholder="min" aria-label="Warm-up minutes">
+      </div>
+    </div>
+
     <div id="exercise-list"></div>
     <div class="add-exercise">
       <input type="text" id="add-input" placeholder="Add exercise — search or type a new one"
              autocomplete="off" autocapitalize="words" aria-label="Add exercise">
       <div class="suggestions" id="suggestions" hidden></div>
+    </div>
+
+    <div class="aux-card" style="margin-top: 14px;">
+      <div class="aux-head"><span class="aux-title">Stretch</span></div>
+      <div class="stretch-row">
+        <button class="chip" data-mins="5">5 min</button>
+        <button class="chip" data-mins="10">10 min</button>
+        <button class="chip" data-mins="15">15 min</button>
+        <input type="text" id="stretch-mins" inputmode="numeric" placeholder="min" aria-label="Stretch minutes">
+      </div>
     </div>
   </section>
 
@@ -356,7 +460,19 @@ function startSession(type) {
         })),
       }))
     : [];
-  current = { type, id: 'sess-' + Date.now(), entries, prefilledFrom: last ? last.date : null };
+  current = {
+    type,
+    id: 'sess-' + Date.now(),
+    entries,
+    prefilledFrom: last ? last.date : null,
+    warmup: {
+      activity: last && last.warmup && last.warmup.activity ? last.warmup.activity : '',
+      minutes: last && last.warmup && last.warmup.minutes != null ? String(last.warmup.minutes) : '',
+    },
+    stretchMins: last && last.stretch && last.stretch.minutes != null ? String(last.stretch.minutes) : '',
+    clockIn: null,
+    clockOut: null,
+  };
   showSession();
 }
 
@@ -378,7 +494,18 @@ function cleanedEntries() {
 function persistSession() {
   const entries = cleanedEntries();
   if (!entries.length) return false;
-  const record = { id: current.id, date: todayISO(), type: current.type, entries };
+  const warmMins = parseInt(current.warmup.minutes, 10);
+  const stretchMins = parseInt(current.stretchMins, 10);
+  const record = {
+    id: current.id, date: todayISO(), type: current.type, entries,
+    warmup: {
+      activity: current.warmup.activity.trim() || null,
+      minutes: warmMins > 0 ? warmMins : null,
+    },
+    stretch: { minutes: stretchMins > 0 ? stretchMins : null },
+    clockIn: current.clockIn,
+    clockOut: current.clockOut,
+  };
   const idx = data.sessions.findIndex(s => s.id === current.id);
   if (idx >= 0) data.sessions[idx] = record;
   else data.sessions.push(record);
@@ -398,13 +525,55 @@ function prettyDate(iso) {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function nowIST() {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(new Date());
+}
+
+function gymMinutes(inStr, outStr) {
+  const [ih, im] = inStr.split(':').map(Number);
+  const [oh, om] = outStr.split(':').map(Number);
+  let mins = (oh * 60 + om) - (ih * 60 + im);
+  if (mins < 0) mins += 24 * 60; // past midnight
+  return mins;
+}
+
+function fmtDuration(mins) {
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? h + 'h ' + m + 'm' : m + 'm';
+}
+
 function buildLogText() {
   const entries = cleanedEntries();
-  const lines = ['Workout Log — ' + DAY_META[current.type].label + ' Day — ' + prettyDate(todayISO()), ''];
+  const lines = ['Workout Log — ' + DAY_META[current.type].label + ' Day — ' + prettyDate(todayISO())];
+
+  const clockBits = [];
+  if (current.clockIn) clockBits.push('Clock-in: ' + current.clockIn + ' IST');
+  if (current.clockOut) clockBits.push('Clock-out: ' + current.clockOut + ' IST');
+  if (current.clockIn && current.clockOut) {
+    clockBits.push('Time in gym: ' + fmtDuration(gymMinutes(current.clockIn, current.clockOut)));
+  }
+  if (clockBits.length) lines.push(clockBits.join(' · '));
+  lines.push('');
+
+  const warmMins = parseInt(current.warmup.minutes, 10);
+  const warmAct = current.warmup.activity.trim();
+  if (warmMins > 0 || warmAct) {
+    const parts = [];
+    if (warmAct) parts.push(warmAct);
+    if (warmMins > 0) parts.push(warmMins + ' min');
+    lines.push('Warm-up: ' + parts.join(' — '));
+  }
+
   entries.forEach((e, i) => {
     const sets = e.sets.map(s => (s.weight != null ? s.weight + 'kg' : 'BW') + '×' + s.reps).join(', ');
     lines.push((i + 1) + '. ' + e.name + ': ' + sets);
   });
+
+  const stretchMins = parseInt(current.stretchMins, 10);
+  if (stretchMins > 0) lines.push('Stretch: ' + stretchMins + ' min');
+
   return lines.join('\n');
 }
 
@@ -454,10 +623,77 @@ function showSession() {
     ? 'Loaded from your last ' + meta.label.toLowerCase() + ' session (' + prettyDate(current.prefilledFrom) + ') — adjust as you go.'
     : 'Fresh start — add your first exercise below.';
   $('add-input').value = '';
+  $('warmup-activity').value = current.warmup.activity;
+  $('warmup-mins').value = current.warmup.minutes;
+  $('stretch-mins').value = current.stretchMins;
+  updateStretchChips();
+  updateClockUI();
   hideSuggestions();
   renderExercises();
   window.scrollTo(0, 0);
 }
+
+/* ---------------- Clock in / out ---------------- */
+
+function updateClockUI() {
+  for (const side of ['in', 'out']) {
+    const val = side === 'in' ? current.clockIn : current.clockOut;
+    $('clock' + side + '-btn').hidden = !!val;
+    $('clock' + side + '-input').hidden = !val;
+    if (val) $('clock' + side + '-input').value = val;
+  }
+  const note = $('duration-note');
+  if (current.clockIn && current.clockOut) {
+    note.hidden = false;
+    note.textContent = 'Time in gym: ' + fmtDuration(gymMinutes(current.clockIn, current.clockOut));
+  } else {
+    note.hidden = true;
+  }
+}
+
+$('clockin-btn').addEventListener('click', () => { current.clockIn = nowIST(); updateClockUI(); });
+$('clockout-btn').addEventListener('click', () => { current.clockOut = nowIST(); updateClockUI(); });
+$('clockin-input').addEventListener('input', e => {
+  if (e.target.value) { current.clockIn = e.target.value; updateClockUI(); }
+});
+$('clockout-input').addEventListener('input', e => {
+  if (e.target.value) { current.clockOut = e.target.value; updateClockUI(); }
+});
+
+// If they clocked in but forgot to clock out, offer to stamp it at copy/save time.
+function ensureClockOut() {
+  if (current.clockIn && !current.clockOut) {
+    const t = nowIST();
+    if (confirm('Clock out now at ' + t + ' IST?')) {
+      current.clockOut = t;
+      updateClockUI();
+    }
+  }
+}
+
+/* ---------------- Warm-up & stretch ---------------- */
+
+$('warmup-activity').addEventListener('input', e => { current.warmup.activity = e.target.value; });
+$('warmup-mins').addEventListener('input', e => { current.warmup.minutes = e.target.value; });
+
+function updateStretchChips() {
+  document.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.mins === current.stretchMins);
+  });
+}
+
+document.querySelectorAll('.chip').forEach(c => {
+  c.addEventListener('click', () => {
+    current.stretchMins = c.dataset.mins;
+    $('stretch-mins').value = c.dataset.mins;
+    updateStretchChips();
+  });
+});
+
+$('stretch-mins').addEventListener('input', e => {
+  current.stretchMins = e.target.value.trim();
+  updateStretchChips();
+});
 
 function renderExercises() {
   const list = $('exercise-list');
@@ -634,6 +870,7 @@ $('copy-btn').addEventListener('click', async () => {
     toast('Nothing to copy — enter some reps first');
     return;
   }
+  ensureClockOut();
   persistSession();
   renderDayCards();
   const ok = await copyText(buildLogText());
@@ -641,6 +878,7 @@ $('copy-btn').addEventListener('click', async () => {
 });
 
 $('save-btn').addEventListener('click', () => {
+  if (cleanedEntries().length) ensureClockOut();
   if (!persistSession()) {
     toast('Nothing to save — enter some reps first');
     return;
