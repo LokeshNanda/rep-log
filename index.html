@@ -302,6 +302,46 @@
 
   .empty-note { color: var(--muted); font-size: 14px; text-align: center; margin: 26px 0; }
 
+  /* ---------- Time zone modal ---------- */
+  .tz-modal[hidden] { display: none; }
+  .tz-modal {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 60;
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .tz-panel {
+    width: 100%; max-width: 480px;
+    max-height: 70vh;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .tz-panel input {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 16px;
+    padding: 12px;
+  }
+  .tz-list { overflow-y: auto; flex: 1; }
+  .tz-list button {
+    display: block; width: 100%;
+    background: none; border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-align: left;
+    font-size: 15px;
+    padding: 12px 8px;
+  }
+  .tz-list button:last-child { border-bottom: none; }
+  .tz-list button:active { background: var(--surface-2); }
+  .tz-list button.selected { color: var(--plate-yellow); font-weight: 600; }
+  .tz-list .tz-abbr { color: var(--muted); font-size: 13px; float: right; }
+
   /* ---------- Toast ---------- */
   #toast {
     position: fixed; left: 50%; bottom: 104px;
@@ -334,6 +374,9 @@
       <button class="tool-btn" id="export-btn">Export backup</button>
       <button class="tool-btn" id="import-btn">Import backup</button>
       <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+    <div class="home-tools">
+      <button class="tool-btn" id="tz-btn">Time zone</button>
     </div>
   </section>
 
@@ -397,6 +440,13 @@
 
 <div id="toast" role="status"></div>
 
+<div class="tz-modal" id="tz-modal" hidden>
+  <div class="tz-panel">
+    <input type="text" id="tz-search" placeholder="Search time zones" autocomplete="off" aria-label="Search time zones">
+    <div class="tz-list" id="tz-list"></div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -424,10 +474,14 @@ function loadData() {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) {
       const d = JSON.parse(raw);
-      if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) return d;
+      if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) {
+        d.settings = d.settings && typeof d.settings === 'object' ? d.settings : {};
+        if (typeof d.settings.timeZone !== 'string') d.settings.timeZone = null;
+        return d;
+      }
     }
   } catch (e) { /* fall through to fresh data */ }
-  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [] };
+  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: { timeZone: null } };
 }
 
 function saveData(d) {
@@ -505,6 +559,7 @@ function persistSession() {
     stretch: { minutes: stretchMins > 0 ? stretchMins : null },
     clockIn: current.clockIn,
     clockOut: current.clockOut,
+    timeZone: activeZone(),
   };
   const idx = data.sessions.findIndex(s => s.id === current.id);
   if (idx >= 0) data.sessions[idx] = record;
@@ -525,9 +580,34 @@ function prettyDate(iso) {
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function nowIST() {
+/* ---------------- Time zone ---------------- */
+
+// CLDR has no English abbreviation for some zones (Intl falls back to "GMT+5:30");
+// alias the ones where a familiar abbreviation exists.
+const TZ_ABBR = { 'Asia/Kolkata': 'IST', 'Asia/Calcutta': 'IST' };
+
+function deviceZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+function activeZone() {
+  return data.settings.timeZone || deviceZone();
+}
+
+function zoneAbbr(zone) {
+  if (TZ_ABBR[zone]) return TZ_ABBR[zone];
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: zone, timeZoneName: 'short' })
+      .formatToParts(new Date());
+    return parts.find(p => p.type === 'timeZoneName').value;
+  } catch (e) {
+    return zone;
+  }
+}
+
+function nowInZone() {
   return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false,
+    timeZone: activeZone(), hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(new Date());
 }
 
@@ -549,8 +629,9 @@ function buildLogText() {
   const lines = ['Workout Log — ' + DAY_META[current.type].label + ' Day — ' + prettyDate(todayISO())];
 
   const clockBits = [];
-  if (current.clockIn) clockBits.push('Clock-in: ' + current.clockIn + ' IST');
-  if (current.clockOut) clockBits.push('Clock-out: ' + current.clockOut + ' IST');
+  const abbr = zoneAbbr(activeZone());
+  if (current.clockIn) clockBits.push('Clock-in: ' + current.clockIn + ' ' + abbr);
+  if (current.clockOut) clockBits.push('Clock-out: ' + current.clockOut + ' ' + abbr);
   if (current.clockIn && current.clockOut) {
     clockBits.push('Time in gym: ' + fmtDuration(gymMinutes(current.clockIn, current.clockOut)));
   }
@@ -651,8 +732,8 @@ function updateClockUI() {
   }
 }
 
-$('clockin-btn').addEventListener('click', () => { current.clockIn = nowIST(); updateClockUI(); });
-$('clockout-btn').addEventListener('click', () => { current.clockOut = nowIST(); updateClockUI(); });
+$('clockin-btn').addEventListener('click', () => { current.clockIn = nowInZone(); updateClockUI(); });
+$('clockout-btn').addEventListener('click', () => { current.clockOut = nowInZone(); updateClockUI(); });
 $('clockin-input').addEventListener('input', e => {
   if (e.target.value) { current.clockIn = e.target.value; updateClockUI(); }
 });
@@ -663,8 +744,8 @@ $('clockout-input').addEventListener('input', e => {
 // If they clocked in but forgot to clock out, offer to stamp it at copy/save time.
 function ensureClockOut() {
   if (current.clockIn && !current.clockOut) {
-    const t = nowIST();
-    if (confirm('Clock out now at ' + t + ' IST?')) {
+    const t = nowInZone();
+    if (confirm('Clock out now at ' + t + ' ' + zoneAbbr(activeZone()) + '?')) {
       current.clockOut = t;
       updateClockUI();
     }
@@ -894,6 +975,60 @@ $('back-btn').addEventListener('click', () => {
   showHome();
 });
 
+/* ---------------- Time zone picker ---------------- */
+
+function renderTzButton() {
+  const zone = activeZone();
+  const label = data.settings.timeZone
+    ? zone + ' (' + zoneAbbr(zone) + ')'
+    : 'Auto — ' + zoneAbbr(zone);
+  $('tz-btn').textContent = 'Time zone · ' + label;
+}
+
+function renderTzList() {
+  const list = $('tz-list');
+  const q = $('tz-search').value.trim().toLowerCase();
+  list.innerHTML = '';
+
+  const addOption = (label, abbr, value, selected) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<span class="tz-abbr"></span>';
+    b.insertBefore(document.createTextNode(label), b.firstChild);
+    b.querySelector('.tz-abbr').textContent = abbr;
+    if (selected) b.classList.add('selected');
+    b.addEventListener('click', () => {
+      data.settings.timeZone = value;
+      saveData(data);
+      closeTzModal();
+      renderTzButton();
+      toast(value ? 'Clock-ins now use ' + zoneAbbr(value) : 'Using device time');
+    });
+    list.appendChild(b);
+  };
+
+  if (!q || 'auto device'.includes(q)) {
+    addOption('Auto — use device time (' + deviceZone() + ')', zoneAbbr(deviceZone()), null, !data.settings.timeZone);
+  }
+  const zones = (typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [deviceZone()])
+    .filter(z => z.toLowerCase().includes(q));
+  for (const z of zones.slice(0, 50)) {
+    addOption(z.replace(/_/g, ' '), zoneAbbr(z), z, data.settings.timeZone === z);
+  }
+}
+
+function closeTzModal() { $('tz-modal').hidden = true; }
+
+$('tz-btn').addEventListener('click', () => {
+  $('tz-modal').hidden = false;
+  $('tz-search').value = '';
+  renderTzList();
+  $('tz-search').focus();
+});
+$('tz-search').addEventListener('input', renderTzList);
+$('tz-modal').addEventListener('click', e => {
+  if (e.target === $('tz-modal')) closeTzModal();
+});
+
 /* ---------------- Export / import ---------------- */
 
 $('export-btn').addEventListener('click', () => {
@@ -928,9 +1063,13 @@ $('import-file').addEventListener('change', () => {
           legs: d.customExercises.legs || [],
         },
         sessions: d.sessions,
+        settings: {
+          timeZone: d.settings && typeof d.settings.timeZone === 'string' ? d.settings.timeZone : null,
+        },
       };
       saveData(data);
       renderDayCards();
+      renderTzButton();
       toast('Backup imported');
     } catch (e) {
       toast('That file isn’t a Rep Log backup');
@@ -943,6 +1082,7 @@ $('import-file').addEventListener('change', () => {
 
 /* ---------------- Init ---------------- */
 
+renderTzButton();
 showHome();
 </script>
 </body>
