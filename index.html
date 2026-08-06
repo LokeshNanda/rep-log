@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#141518">
 <title>Rep Log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%231e2024' stroke='%23e04a3a' stroke-width='12'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23141518'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,6 +151,27 @@
   .set-row input:focus { outline: 2px solid var(--pc, var(--muted)); outline-offset: -1px; border-color: transparent; }
   .set-row input::placeholder { color: #5b5f68; }
   .set-x { color: var(--muted); flex: none; }
+  .set-tick {
+    flex: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: none;
+    color: transparent;
+    font-size: 16px; line-height: 1;
+    padding: 0;
+  }
+  .set-row.done .set-tick {
+    background: var(--pc, var(--ink));
+    border-color: var(--pc, var(--ink));
+    color: #101114;
+  }
+  .set-row.done input { opacity: 0.5; }
+  .set-hint {
+    color: #5b5f68;
+    font-size: 12px;
+    margin: -6px 0 8px 52px;
+  }
   .set-remove {
     background: none; border: none;
     color: var(--muted); font-size: 18px;
@@ -207,6 +230,19 @@
     letter-spacing: 0.02em;
   }
   .warmup-row, .stretch-row { display: flex; gap: 8px; }
+  .aux-card textarea {
+    display: block;
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 16px;
+    padding: 10px;
+    resize: vertical;
+    min-height: 52px;
+  }
   .warmup-row input, .stretch-row input {
     background: var(--surface-2);
     border: 1px solid var(--line);
@@ -299,6 +335,8 @@
     padding: 15px;
   }
   .btn-primary:active, .btn-secondary:active { filter: brightness(1.12); }
+  .btn-share { flex: 0 0 54px; display: flex; align-items: center; justify-content: center; }
+  .btn-share[hidden] { display: none; }
 
   .empty-note { color: var(--muted); font-size: 14px; text-align: center; margin: 26px 0; }
 
@@ -342,6 +380,98 @@
   .tz-list button.selected { color: var(--plate-yellow); font-weight: 600; }
   .tz-list .tz-abbr { color: var(--muted); font-size: 13px; float: right; }
 
+  /* ---------- History ---------- */
+  .history-title {
+    font-family: var(--display);
+    font-weight: 700; font-size: 36px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    margin: 0 0 16px;
+  }
+  .history-item {
+    display: flex; align-items: baseline; gap: 12px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--pc, var(--line));
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    text-align: left;
+  }
+  .history-item:active { background: var(--surface-2); }
+  .history-day {
+    font-family: var(--display);
+    font-weight: 700; font-size: 21px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--pc, var(--ink));
+    flex: none;
+  }
+  .history-meta { color: var(--muted); font-size: 14px; }
+  .history-log {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0 0 14px;
+  }
+  .history-actions { display: flex; gap: 10px; }
+  .history-actions button {
+    flex: 1;
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 15px;
+    padding: 13px;
+  }
+  .history-actions button:active { filter: brightness(1.15); }
+  .history-actions .danger { color: var(--plate-red); }
+
+  /* ---------- Rest timer chip ---------- */
+  .rest-chip[hidden] { display: none; }
+  .rest-chip {
+    position: fixed; left: 50%; bottom: 96px;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--pc, var(--line));
+    border-radius: 999px;
+    padding: 8px 10px 8px 18px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    white-space: nowrap;
+  }
+  #rest-label { color: var(--muted); font-size: 13px; }
+  #rest-time {
+    font-family: var(--display);
+    font-weight: 700; font-size: 22px;
+    letter-spacing: 0.03em;
+    min-width: 54px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .rest-chip button {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: inherit;
+    font-size: 13px;
+    padding: 7px 11px;
+  }
+  .rest-chip.done {
+    background: var(--pc, var(--ink));
+    border-color: var(--pc, var(--ink));
+    color: #101114;
+  }
+  .rest-chip.done #rest-label { color: rgba(16,17,20,0.65); }
+  .rest-chip.done button { border-color: rgba(16,17,20,0.35); }
+  body.rest-visible #toast { bottom: 172px; }
+  body.rest-visible #app { padding-bottom: 200px; }
+
   /* ---------- Toast ---------- */
   #toast {
     position: fixed; left: 50%; bottom: 104px;
@@ -371,12 +501,19 @@
     <p class="tagline">Pick today's split — your last session loads ready to edit.</p>
     <div id="day-cards"></div>
     <div class="home-tools">
+      <button class="tool-btn" id="history-btn">History</button>
+    </div>
+    <div class="home-tools">
       <button class="tool-btn" id="export-btn">Export backup</button>
       <button class="tool-btn" id="import-btn">Import backup</button>
       <input type="file" id="import-file" accept="application/json,.json" hidden>
     </div>
     <div class="home-tools">
       <button class="tool-btn" id="tz-btn">Time zone</button>
+      <button class="tool-btn" id="unit-btn">Units</button>
+    </div>
+    <div class="home-tools">
+      <button class="tool-btn" id="rest-btn">Rest timer</button>
     </div>
   </section>
 
@@ -427,6 +564,18 @@
         <input type="text" id="stretch-mins" inputmode="numeric" placeholder="min" aria-label="Stretch minutes">
       </div>
     </div>
+
+    <div class="aux-card">
+      <div class="aux-head"><span class="aux-title">Notes</span></div>
+      <textarea id="notes-input" rows="2" placeholder="Anything for the coach — aches, energy, machine swaps…"
+                aria-label="Session notes"></textarea>
+    </div>
+  </section>
+
+  <section id="view-history" hidden>
+    <button class="back-btn" id="history-back">‹ Back</button>
+    <h2 class="history-title">History</h2>
+    <div id="history-body"></div>
   </section>
 
 </div>
@@ -434,8 +583,18 @@
 <div class="action-bar" id="action-bar">
   <div class="action-bar-inner">
     <button class="btn-primary" id="copy-btn">Copy for LLM</button>
+    <button class="btn-secondary btn-share" id="share-btn" hidden aria-label="Share log">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>
+    </button>
     <button class="btn-secondary" id="save-btn">Finish &amp; Save</button>
   </div>
+</div>
+
+<div class="rest-chip" id="rest-chip" hidden>
+  <span id="rest-label">Rest</span>
+  <span id="rest-time">1:30</span>
+  <button id="rest-plus">+30s</button>
+  <button id="rest-close" aria-label="Dismiss rest timer">✕</button>
 </div>
 
 <div id="toast" role="status"></div>
@@ -475,13 +634,21 @@ function loadData() {
     if (raw) {
       const d = JSON.parse(raw);
       if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) {
-        d.settings = d.settings && typeof d.settings === 'object' ? d.settings : {};
-        if (typeof d.settings.timeZone !== 'string') d.settings.timeZone = null;
+        d.settings = normalizeSettings(d.settings);
         return d;
       }
     }
   } catch (e) { /* fall through to fresh data */ }
-  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: { timeZone: null } };
+  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null) };
+}
+
+function normalizeSettings(s) {
+  s = s && typeof s === 'object' ? s : {};
+  return {
+    timeZone: typeof s.timeZone === 'string' ? s.timeZone : null,
+    unit: s.unit === 'lb' ? 'lb' : 'kg',
+    restSeconds: [0, 60, 90, 120].includes(s.restSeconds) ? s.restSeconds : 90,
+  };
 }
 
 function saveData(d) {
@@ -503,6 +670,20 @@ function lastSessionOfType(type) {
   return null;
 }
 
+// Most recent logged sets for an exercise, for the "was 40kg×12" hints.
+// Excludes the in-progress session: Copy persists mid-workout, and without
+// the exclusion the hint would mirror today's own numbers.
+function lastSetsFor(name) {
+  const needle = name.toLowerCase();
+  for (let i = data.sessions.length - 1; i >= 0; i--) {
+    const rec = data.sessions[i];
+    if (current && rec.id === current.id) continue;
+    const entry = (rec.entries || []).find(e => e.name.toLowerCase() === needle);
+    if (entry) return { sets: entry.sets, unit: rec.unit || 'kg' };
+  }
+  return null;
+}
+
 function startSession(type) {
   const last = lastSessionOfType(type);
   const entries = last
@@ -517,16 +698,19 @@ function startSession(type) {
   current = {
     type,
     id: 'sess-' + Date.now(),
-    entries,
+    entries,   // prev hints attached below, after `current` exists
+
     prefilledFrom: last ? last.date : null,
     warmup: {
       activity: last && last.warmup && last.warmup.activity ? last.warmup.activity : '',
       minutes: last && last.warmup && last.warmup.minutes != null ? String(last.warmup.minutes) : '',
     },
     stretchMins: last && last.stretch && last.stretch.minutes != null ? String(last.stretch.minutes) : '',
+    notes: '',
     clockIn: null,
     clockOut: null,
   };
+  current.entries.forEach(e => { e.prev = lastSetsFor(e.name); });
   showSession();
 }
 
@@ -545,26 +729,39 @@ function cleanedEntries() {
   return out;
 }
 
-function persistSession() {
+// Builds the cleaned, persistable record from the in-progress session.
+// Returns null when there is nothing loggable yet.
+function buildRecord() {
   const entries = cleanedEntries();
-  if (!entries.length) return false;
+  if (!entries.length) return null;
   const warmMins = parseInt(current.warmup.minutes, 10);
   const stretchMins = parseInt(current.stretchMins, 10);
-  const record = {
+  return {
     id: current.id, date: todayISO(), type: current.type, entries,
     warmup: {
       activity: current.warmup.activity.trim() || null,
       minutes: warmMins > 0 ? warmMins : null,
     },
     stretch: { minutes: stretchMins > 0 ? stretchMins : null },
+    notes: current.notes.trim() || null,
     clockIn: current.clockIn,
     clockOut: current.clockOut,
     timeZone: activeZone(),
+    unit: data.settings.unit,
   };
-  const idx = data.sessions.findIndex(s => s.id === current.id);
+}
+
+function persistRecord(record) {
+  const idx = data.sessions.findIndex(s => s.id === record.id);
   if (idx >= 0) data.sessions[idx] = record;
   else data.sessions.push(record);
   saveData(data);
+}
+
+function persistSession() {
+  const record = buildRecord();
+  if (!record) return false;
+  persistRecord(record);
   return true;
 }
 
@@ -624,36 +821,37 @@ function fmtDuration(mins) {
   return h ? h + 'h ' + m + 'm' : m + 'm';
 }
 
-function buildLogText() {
-  const entries = cleanedEntries();
-  const lines = ['Workout Log — ' + DAY_META[current.type].label + ' Day — ' + prettyDate(todayISO())];
+// Renders any cleaned session record (today's or historical) as the LLM text.
+// Tolerates records saved by older versions that lack newer fields.
+function buildLogText(record) {
+  const meta = DAY_META[record.type] || { label: record.type };
+  const lines = ['Workout Log — ' + meta.label + ' Day — ' + prettyDate(record.date)];
 
   const clockBits = [];
-  const abbr = zoneAbbr(activeZone());
-  if (current.clockIn) clockBits.push('Clock-in: ' + current.clockIn + ' ' + abbr);
-  if (current.clockOut) clockBits.push('Clock-out: ' + current.clockOut + ' ' + abbr);
-  if (current.clockIn && current.clockOut) {
-    clockBits.push('Time in gym: ' + fmtDuration(gymMinutes(current.clockIn, current.clockOut)));
+  const abbr = zoneAbbr(record.timeZone || activeZone());
+  if (record.clockIn) clockBits.push('Clock-in: ' + record.clockIn + ' ' + abbr);
+  if (record.clockOut) clockBits.push('Clock-out: ' + record.clockOut + ' ' + abbr);
+  if (record.clockIn && record.clockOut) {
+    clockBits.push('Time in gym: ' + fmtDuration(gymMinutes(record.clockIn, record.clockOut)));
   }
   if (clockBits.length) lines.push(clockBits.join(' · '));
   lines.push('');
 
-  const warmMins = parseInt(current.warmup.minutes, 10);
-  const warmAct = current.warmup.activity.trim();
-  if (warmMins > 0 || warmAct) {
+  if (record.warmup && (record.warmup.minutes || record.warmup.activity)) {
     const parts = [];
-    if (warmAct) parts.push(warmAct);
-    if (warmMins > 0) parts.push(warmMins + ' min');
+    if (record.warmup.activity) parts.push(record.warmup.activity);
+    if (record.warmup.minutes) parts.push(record.warmup.minutes + ' min');
     lines.push('Warm-up: ' + parts.join(' — '));
   }
 
-  entries.forEach((e, i) => {
-    const sets = e.sets.map(s => (s.weight != null ? s.weight + 'kg' : 'BW') + '×' + s.reps).join(', ');
+  const unit = record.unit || 'kg';
+  record.entries.forEach((e, i) => {
+    const sets = e.sets.map(s => (s.weight != null ? s.weight + unit : 'BW') + '×' + s.reps).join(', ');
     lines.push((i + 1) + '. ' + e.name + ': ' + sets);
   });
 
-  const stretchMins = parseInt(current.stretchMins, 10);
-  if (stretchMins > 0) lines.push('Stretch: ' + stretchMins + ' min');
+  if (record.stretch && record.stretch.minutes) lines.push('Stretch: ' + record.stretch.minutes + ' min');
+  if (record.notes) lines.push('Notes: ' + record.notes);
 
   return lines.join('\n');
 }
@@ -661,15 +859,20 @@ function buildLogText() {
 /* ---------------- Views ---------------- */
 
 const $ = id => document.getElementById(id);
-const viewHome = $('view-home'), viewSession = $('view-session'), actionBar = $('action-bar');
+const actionBar = $('action-bar');
+const VIEWS = ['view-home', 'view-session', 'view-history'];
+
+function showView(id) {
+  for (const v of VIEWS) $(v).hidden = v !== id;
+  actionBar.classList.toggle('visible', id === 'view-session');
+  window.scrollTo(0, 0);
+}
 
 function showHome() {
   current = null;
-  viewSession.hidden = true;
-  viewHome.hidden = false;
-  actionBar.classList.remove('visible');
+  hideRestChip();
   renderDayCards();
-  window.scrollTo(0, 0);
+  showView('view-home');
 }
 
 function renderDayCards() {
@@ -693,11 +896,9 @@ function renderDayCards() {
 
 function showSession() {
   const meta = DAY_META[current.type];
-  viewHome.hidden = true;
-  viewSession.hidden = false;
-  viewSession.style.setProperty('--pc', meta.color);
-  actionBar.classList.add('visible');
+  $('view-session').style.setProperty('--pc', meta.color);
   actionBar.style.setProperty('--pc', meta.color);
+  $('rest-chip').style.setProperty('--pc', meta.color);
   $('session-title').textContent = meta.label + ' Day';
   $('session-date').textContent = prettyDate(todayISO());
   $('prefill-note').textContent = current.prefilledFrom
@@ -707,12 +908,110 @@ function showSession() {
   $('warmup-activity').value = current.warmup.activity;
   $('warmup-mins').value = current.warmup.minutes;
   $('stretch-mins').value = current.stretchMins;
+  $('notes-input').value = current.notes;
   updateStretchChips();
   updateClockUI();
   hideSuggestions();
   renderExercises();
-  window.scrollTo(0, 0);
+  showView('view-session');
 }
+
+/* ---------------- History ---------------- */
+
+let historyDetailId = null;
+
+function showHistory() {
+  historyDetailId = null;
+  renderHistory();
+  showView('view-history');
+}
+
+function renderHistory() {
+  const body = $('history-body');
+  body.innerHTML = '';
+
+  if (historyDetailId) {
+    const rec = data.sessions.find(s => s.id === historyDetailId);
+    if (rec) { renderHistoryDetail(body, rec); return; }
+    historyDetailId = null;
+  }
+
+  const sessions = data.sessions.slice().reverse();
+  if (!sessions.length) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'No sessions yet — your saved workouts will show up here.';
+    body.appendChild(p);
+    return;
+  }
+  for (const rec of sessions) {
+    const meta = DAY_META[rec.type] || { label: String(rec.type), color: 'var(--muted)' };
+    const item = document.createElement('button');
+    item.className = 'history-item';
+    item.style.setProperty('--pc', meta.color);
+    const day = document.createElement('span');
+    day.className = 'history-day';
+    day.textContent = meta.label;
+    const info = document.createElement('span');
+    info.className = 'history-meta';
+    const dur = rec.clockIn && rec.clockOut ? ' · ' + fmtDuration(gymMinutes(rec.clockIn, rec.clockOut)) : '';
+    info.textContent = prettyDate(rec.date) + ' · ' + (rec.entries || []).length + ' exercises' + dur;
+    item.append(day, info);
+    item.addEventListener('click', () => { historyDetailId = rec.id; renderHistory(); window.scrollTo(0, 0); });
+    body.appendChild(item);
+  }
+}
+
+function renderHistoryDetail(body, rec) {
+  const pre = document.createElement('pre');
+  pre.className = 'history-log';
+  pre.textContent = buildLogText(rec);
+  body.appendChild(pre);
+
+  const actions = document.createElement('div');
+  actions.className = 'history-actions';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Copy';
+  copyBtn.addEventListener('click', async () => {
+    const ok = await copyText(buildLogText(rec));
+    toast(ok ? 'Copied' : 'Copy failed — try again');
+  });
+  actions.appendChild(copyBtn);
+
+  if (navigator.share) {
+    const shareBtn = document.createElement('button');
+    shareBtn.textContent = 'Share';
+    shareBtn.addEventListener('click', () => shareLog(buildLogText(rec)));
+    actions.appendChild(shareBtn);
+  }
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'danger';
+  delBtn.textContent = 'Delete';
+  delBtn.addEventListener('click', () => {
+    if (!confirm('Delete this ' + prettyDate(rec.date) + ' session? This can’t be undone.')) return;
+    data.sessions = data.sessions.filter(s => s.id !== rec.id);
+    saveData(data);
+    historyDetailId = null;
+    renderHistory();
+    toast('Session deleted');
+  });
+  actions.appendChild(delBtn);
+
+  body.appendChild(actions);
+}
+
+$('history-btn').addEventListener('click', showHistory);
+$('history-back').addEventListener('click', () => {
+  if (historyDetailId) {
+    historyDetailId = null;
+    renderHistory();
+    window.scrollTo(0, 0);
+  } else {
+    showHome();
+  }
+});
 
 /* ---------------- Clock in / out ---------------- */
 
@@ -752,6 +1051,86 @@ function ensureClockOut() {
   }
 }
 
+/* ---------------- Rest timer ---------------- */
+
+// Deadline-based (mobile browsers throttle/suspend intervals under lock):
+// the interval only re-renders `restEndsAt - now`; the chip catches up via
+// visibilitychange when the phone comes back.
+let restEndsAt = null, restInterval = null, restNotified = false;
+
+function startRestTimer() {
+  const secs = data.settings.restSeconds;
+  if (!secs) return;
+  restEndsAt = Date.now() + secs * 1000;
+  restNotified = false;
+  $('rest-chip').hidden = false;
+  $('rest-chip').classList.remove('done');
+  document.body.classList.add('rest-visible');
+  if (!restInterval) restInterval = setInterval(renderRestTimer, 250);
+  renderRestTimer();
+}
+
+function renderRestTimer() {
+  if (restEndsAt == null) return;
+  const remain = Math.ceil((restEndsAt - Date.now()) / 1000);
+  if (remain <= 0) {
+    $('rest-time').textContent = 'Go!';
+    $('rest-chip').classList.add('done');
+    clearInterval(restInterval);
+    restInterval = null;
+    if (!restNotified) {
+      restNotified = true;
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      setTimeout(() => {
+        if (restEndsAt && Date.now() >= restEndsAt) hideRestChip();
+      }, 5000);
+    }
+  } else {
+    $('rest-time').textContent = Math.floor(remain / 60) + ':' + String(remain % 60).padStart(2, '0');
+  }
+}
+
+function hideRestChip() {
+  clearInterval(restInterval);
+  restInterval = null;
+  restEndsAt = null;
+  $('rest-chip').hidden = true;
+  document.body.classList.remove('rest-visible');
+}
+
+$('rest-plus').addEventListener('click', () => {
+  if (restEndsAt == null) return;
+  restEndsAt = Math.max(restEndsAt, Date.now()) + 30000;
+  restNotified = false;
+  $('rest-chip').classList.remove('done');
+  if (!restInterval) restInterval = setInterval(renderRestTimer, 250);
+  renderRestTimer();
+});
+
+$('rest-close').addEventListener('click', hideRestChip);
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && restEndsAt != null) {
+    if (!restInterval && Date.now() < restEndsAt) restInterval = setInterval(renderRestTimer, 250);
+    renderRestTimer();
+  }
+});
+
+const REST_STEPS = [60, 90, 120, 0];
+
+function renderRestButton() {
+  const s = data.settings.restSeconds;
+  $('rest-btn').textContent = 'Rest timer · ' + (s ? s + 's' : 'Off');
+}
+
+$('rest-btn').addEventListener('click', () => {
+  const next = REST_STEPS[(REST_STEPS.indexOf(data.settings.restSeconds) + 1) % REST_STEPS.length];
+  data.settings.restSeconds = next;
+  saveData(data);
+  renderRestButton();
+  toast(next ? 'Rest timer: ' + next + 's after each ticked set' : 'Rest timer off');
+});
+
 /* ---------------- Warm-up & stretch ---------------- */
 
 $('warmup-activity').addEventListener('input', e => { current.warmup.activity = e.target.value; });
@@ -775,6 +1154,8 @@ $('stretch-mins').addEventListener('input', e => {
   current.stretchMins = e.target.value.trim();
   updateStretchChips();
 });
+
+$('notes-input').addEventListener('input', e => { current.notes = e.target.value; });
 
 function renderExercises() {
   const list = $('exercise-list');
@@ -810,7 +1191,7 @@ function renderExercises() {
 
     entry.sets.forEach((set, si) => {
       const row = document.createElement('div');
-      row.className = 'set-row';
+      row.className = 'set-row' + (set.done ? ' done' : '');
 
       const label = document.createElement('span');
       label.className = 'set-label';
@@ -819,7 +1200,7 @@ function renderExercises() {
       const weight = document.createElement('input');
       weight.type = 'text';
       weight.inputMode = 'decimal';
-      weight.placeholder = 'kg';
+      weight.placeholder = data.settings.unit;
       weight.value = set.weight;
       weight.setAttribute('aria-label', entry.name + ' set ' + (si + 1) + ' weight in kg');
       weight.addEventListener('input', () => { set.weight = weight.value; });
@@ -837,6 +1218,16 @@ function renderExercises() {
       reps.setAttribute('aria-label', entry.name + ' set ' + (si + 1) + ' reps');
       reps.addEventListener('input', () => { set.reps = reps.value; });
 
+      const tick = document.createElement('button');
+      tick.className = 'set-tick';
+      tick.setAttribute('aria-label', 'Mark set ' + (si + 1) + (set.done ? ' not done' : ' done'));
+      tick.textContent = '✓';
+      tick.addEventListener('click', () => {
+        set.done = !set.done;
+        if (set.done) startRestTimer();
+        renderExercises();
+      });
+
       const rmSet = document.createElement('button');
       rmSet.className = 'set-remove';
       rmSet.setAttribute('aria-label', 'Remove set ' + (si + 1));
@@ -846,8 +1237,16 @@ function renderExercises() {
         renderExercises();
       });
 
-      row.append(label, weight, x, reps, rmSet);
+      row.append(label, weight, x, reps, tick, rmSet);
       card.appendChild(row);
+
+      const prevSet = entry.prev && entry.prev.sets[si];
+      if (prevSet) {
+        const hint = document.createElement('p');
+        hint.className = 'set-hint';
+        hint.textContent = 'was ' + (prevSet.weight != null ? prevSet.weight + entry.prev.unit : 'BW') + '×' + prevSet.reps;
+        card.appendChild(hint);
+      }
     });
 
     const addSet = document.createElement('button');
@@ -906,7 +1305,7 @@ function renderSuggestions() {
 }
 
 function addExercise(name) {
-  current.entries.push({ name, sets: [{ weight: '', reps: '' }] });
+  current.entries.push({ name, sets: [{ weight: '', reps: '' }], prev: lastSetsFor(name) });
   $('add-input').value = '';
   hideSuggestions();
   renderExercises();
@@ -946,15 +1345,36 @@ async function copyText(text) {
   }
 }
 
+async function shareLog(text) {
+  try {
+    await navigator.share({ text });
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Share failed — use Copy instead');
+  }
+}
+
+$('share-btn').addEventListener('click', () => {
+  if (!cleanedEntries().length) {
+    toast('Nothing to share — enter some reps first');
+    return;
+  }
+  ensureClockOut();
+  const record = buildRecord();
+  persistRecord(record);
+  renderDayCards();
+  shareLog(buildLogText(record));
+});
+
 $('copy-btn').addEventListener('click', async () => {
   if (!cleanedEntries().length) {
     toast('Nothing to copy — enter some reps first');
     return;
   }
   ensureClockOut();
-  persistSession();
+  const record = buildRecord();
+  persistRecord(record);
   renderDayCards();
-  const ok = await copyText(buildLogText());
+  const ok = await copyText(buildLogText(record));
   toast(ok ? 'Copied — paste it to your coach' : 'Copy failed — try again');
 });
 
@@ -1029,6 +1449,19 @@ $('tz-modal').addEventListener('click', e => {
   if (e.target === $('tz-modal')) closeTzModal();
 });
 
+/* ---------------- Units ---------------- */
+
+function renderUnitButton() {
+  $('unit-btn').textContent = 'Units · ' + data.settings.unit;
+}
+
+$('unit-btn').addEventListener('click', () => {
+  data.settings.unit = data.settings.unit === 'kg' ? 'lb' : 'kg';
+  saveData(data);
+  renderUnitButton();
+  toast('New logs will use ' + data.settings.unit + ' — saved history keeps its unit');
+});
+
 /* ---------------- Export / import ---------------- */
 
 $('export-btn').addEventListener('click', () => {
@@ -1063,13 +1496,12 @@ $('import-file').addEventListener('change', () => {
           legs: d.customExercises.legs || [],
         },
         sessions: d.sessions,
-        settings: {
-          timeZone: d.settings && typeof d.settings.timeZone === 'string' ? d.settings.timeZone : null,
-        },
+        settings: normalizeSettings(d.settings),
       };
       saveData(data);
       renderDayCards();
       renderTzButton();
+      renderUnitButton();
       toast('Backup imported');
     } catch (e) {
       toast('That file isn’t a Rep Log backup');
@@ -1083,6 +1515,10 @@ $('import-file').addEventListener('change', () => {
 /* ---------------- Init ---------------- */
 
 renderTzButton();
+renderUnitButton();
+renderRestButton();
+if (navigator.share) $('share-btn').hidden = false;
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 showHome();
 </script>
 </body>
