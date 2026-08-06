@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#141518">
+<title>Rep Log</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%231e2024' stroke='%23e04a3a' stroke-width='12'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23141518'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #141518;          /* rubber gym floor */
+    --surface: #1e2024;
+    --surface-2: #26292e;
+    --line: #2e3238;
+    --ink: #f2efe9;         /* chalk */
+    --muted: #8b8f98;
+    --plate-red: #e04a3a;   /* 25 kg plate — Push */
+    --plate-blue: #4a76e8;  /* 20 kg plate — Pull */
+    --plate-yellow: #e8b32b;/* 15 kg plate — Legs */
+    --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { max-width: 480px; margin: 0 auto; padding: 20px 16px 120px; }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 44px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 8px 0 2px;
+  }
+  .tagline { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  /* ---------- Home: day cards ---------- */
+  .day-card {
+    display: flex; align-items: center; gap: 16px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 16px;
+    margin-bottom: 14px;
+    text-align: left;
+    transition: transform 0.06s ease;
+  }
+  .day-card:active { transform: scale(0.985); }
+  .plate {
+    flex: none;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 7px solid var(--pc, var(--muted));
+    background:
+      radial-gradient(circle at center, var(--bg) 0 24%, var(--surface-2) 25% 100%);
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.45);
+  }
+  .day-card .day-name {
+    font-family: var(--display);
+    font-weight: 700; font-size: 30px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    line-height: 1.05;
+  }
+  .day-card .day-last { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+  .day-card .chev { margin-left: auto; color: var(--muted); font-size: 22px; }
+
+  .home-tools { display: flex; gap: 10px; margin-top: 26px; }
+  .tool-btn {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--muted);
+    padding: 12px;
+    font-size: 14px;
+  }
+  .tool-btn:active { background: var(--surface); }
+
+  /* ---------- Session ---------- */
+  .session-head {
+    display: flex; align-items: baseline; gap: 12px;
+    border-top: 4px solid var(--pc, var(--line));
+    padding-top: 14px; margin-bottom: 4px;
+  }
+  .session-head h2 {
+    font-family: var(--display);
+    font-weight: 700; font-size: 36px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    margin: 0;
+    color: var(--pc, var(--ink));
+  }
+  .session-head .session-date { color: var(--muted); font-size: 14px; }
+  .back-btn {
+    background: none; border: none;
+    color: var(--muted); font-size: 15px;
+    padding: 10px 0; margin: 0 0 4px -2px;
+  }
+  .prefill-note { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+
+  .exercise-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    margin-bottom: 12px;
+  }
+  .exercise-top { display: flex; align-items: center; margin-bottom: 10px; }
+  .exercise-name {
+    font-family: var(--display);
+    font-weight: 600; font-size: 21px;
+    letter-spacing: 0.02em;
+  }
+  .icon-btn {
+    background: none; border: none;
+    color: var(--muted);
+    font-size: 20px; line-height: 1;
+    padding: 8px 10px;
+    margin: -8px -10px -8px auto;
+  }
+  .set-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .set-label { color: var(--muted); font-size: 13px; width: 44px; flex: none; }
+  .set-row input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 17px;
+    padding: 10px 10px;
+    text-align: center;
+    min-width: 0;
+  }
+  .set-row input:focus { outline: 2px solid var(--pc, var(--muted)); outline-offset: -1px; border-color: transparent; }
+  .set-row input::placeholder { color: #5b5f68; }
+  .set-x { color: var(--muted); flex: none; }
+  .set-remove {
+    background: none; border: none;
+    color: var(--muted); font-size: 18px;
+    padding: 6px 8px; flex: none;
+  }
+  .add-set-btn {
+    background: none;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    width: 100%; padding: 9px;
+    margin-top: 2px;
+  }
+  .add-set-btn:active { background: var(--surface-2); }
+
+  /* ---------- Add exercise ---------- */
+  .add-exercise { position: relative; margin-top: 18px; }
+  .add-exercise input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--ink);
+    font-size: 16px;
+    padding: 14px;
+  }
+  .add-exercise input:focus { outline: 2px solid var(--pc, var(--muted)); outline-offset: -1px; }
+  .suggestions {
+    position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 30;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+  }
+  .suggestions button {
+    display: block; width: 100%;
+    background: none; border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-align: left;
+    font-size: 15.5px;
+    padding: 13px 14px;
+  }
+  .suggestions button:last-child { border-bottom: none; }
+  .suggestions button:active { background: var(--surface); }
+  .suggestions .add-new { color: var(--pc, var(--ink)); font-weight: 600; }
+
+  /* ---------- Bottom action bar ---------- */
+  .action-bar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    padding: 18px 16px 20px;
+    display: none;
+  }
+  .action-bar.visible { display: block; }
+  .action-bar-inner { max-width: 480px; margin: 0 auto; display: flex; gap: 10px; }
+  .btn-primary {
+    flex: 1.4;
+    background: var(--pc, var(--ink));
+    color: #101114;
+    border: none; border-radius: 12px;
+    font-family: var(--display);
+    font-weight: 700; font-size: 20px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 15px;
+  }
+  .btn-secondary {
+    flex: 1;
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px solid var(--line); border-radius: 12px;
+    font-family: var(--display);
+    font-weight: 600; font-size: 20px;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 15px;
+  }
+  .btn-primary:active, .btn-secondary:active { filter: brightness(1.12); }
+
+  .empty-note { color: var(--muted); font-size: 14px; text-align: center; margin: 26px 0; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; left: 50%; bottom: 104px;
+    transform: translateX(-50%);
+    background: var(--ink); color: #101114;
+    font-size: 14.5px; font-weight: 600;
+    border-radius: 999px;
+    padding: 10px 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; }
+
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section id="view-home">
+    <h1>Rep Log</h1>
+    <p class="tagline">Pick today's split — your last session loads ready to edit.</p>
+    <div id="day-cards"></div>
+    <div class="home-tools">
+      <button class="tool-btn" id="export-btn">Export backup</button>
+      <button class="tool-btn" id="import-btn">Import backup</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <section id="view-session" hidden>
+    <button class="back-btn" id="back-btn">‹ Back</button>
+    <div class="session-head">
+      <h2 id="session-title"></h2>
+      <span class="session-date" id="session-date"></span>
+    </div>
+    <p class="prefill-note" id="prefill-note"></p>
+    <div id="exercise-list"></div>
+    <div class="add-exercise">
+      <input type="text" id="add-input" placeholder="Add exercise — search or type a new one"
+             autocomplete="off" autocapitalize="words" aria-label="Add exercise">
+      <div class="suggestions" id="suggestions" hidden></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="action-bar" id="action-bar">
+  <div class="action-bar-inner">
+    <button class="btn-primary" id="copy-btn">Copy for LLM</button>
+    <button class="btn-secondary" id="save-btn">Finish &amp; Save</button>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+
+<script>
+'use strict';
+
+/* ---------------- Data layer ---------------- */
+
+const STORE_KEY = 'replog-data-v1';
+
+const SEED = {
+  push: ['Bench Press', 'Incline Dumbbell Press', 'Overhead Press', 'Dumbbell Shoulder Press',
+         'Chest Fly', 'Lateral Raise', 'Tricep Pushdown', 'Overhead Tricep Extension', 'Dips', 'Push-ups'],
+  pull: ['Lat Pulldown', 'Pull-ups', 'Seated Cable Row', 'Barbell Row', 'Single-arm Dumbbell Row',
+         'Face Pull', 'Rear Delt Fly', 'Bicep Curl', 'Hammer Curl', 'Shrugs'],
+  legs: ['Squat', 'Leg Press', 'Romanian Deadlift', 'Deadlift', 'Walking Lunges',
+         'Leg Extension', 'Leg Curl', 'Hip Thrust', 'Calf Raise', 'Bulgarian Split Squat'],
+};
+
+const DAY_META = {
+  push: { label: 'Push', color: 'var(--plate-red)' },
+  pull: { label: 'Pull', color: 'var(--plate-blue)' },
+  legs: { label: 'Legs', color: 'var(--plate-yellow)' },
+};
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) return d;
+    }
+  } catch (e) { /* fall through to fresh data */ }
+  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [] };
+}
+
+function saveData(d) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(d));
+}
+
+let data = loadData();
+
+/* ---------------- Session state ---------------- */
+
+// current = { type, id, entries: [{ name, sets: [{ weight, reps }] }] }
+// weight/reps are strings while editing; cleaned on save/copy.
+let current = null;
+
+function lastSessionOfType(type) {
+  for (let i = data.sessions.length - 1; i >= 0; i--) {
+    if (data.sessions[i].type === type) return data.sessions[i];
+  }
+  return null;
+}
+
+function startSession(type) {
+  const last = lastSessionOfType(type);
+  const entries = last
+    ? last.entries.map(e => ({
+        name: e.name,
+        sets: e.sets.map(s => ({
+          weight: s.weight == null ? '' : String(s.weight),
+          reps: s.reps == null ? '' : String(s.reps),
+        })),
+      }))
+    : [];
+  current = { type, id: 'sess-' + Date.now(), entries, prefilledFrom: last ? last.date : null };
+  showSession();
+}
+
+function cleanedEntries() {
+  const out = [];
+  for (const e of current.entries) {
+    const sets = [];
+    for (const s of e.sets) {
+      const reps = parseInt(s.reps, 10);
+      if (!reps || reps <= 0) continue;
+      const w = parseFloat(s.weight);
+      sets.push({ weight: isFinite(w) && w > 0 ? w : null, reps });
+    }
+    if (sets.length) out.push({ name: e.name, sets });
+  }
+  return out;
+}
+
+function persistSession() {
+  const entries = cleanedEntries();
+  if (!entries.length) return false;
+  const record = { id: current.id, date: todayISO(), type: current.type, entries };
+  const idx = data.sessions.findIndex(s => s.id === current.id);
+  if (idx >= 0) data.sessions[idx] = record;
+  else data.sessions.push(record);
+  saveData(data);
+  return true;
+}
+
+/* ---------------- Formatting ---------------- */
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function prettyDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function buildLogText() {
+  const entries = cleanedEntries();
+  const lines = ['Workout Log — ' + DAY_META[current.type].label + ' Day — ' + prettyDate(todayISO()), ''];
+  entries.forEach((e, i) => {
+    const sets = e.sets.map(s => (s.weight != null ? s.weight + 'kg' : 'BW') + '×' + s.reps).join(', ');
+    lines.push((i + 1) + '. ' + e.name + ': ' + sets);
+  });
+  return lines.join('\n');
+}
+
+/* ---------------- Views ---------------- */
+
+const $ = id => document.getElementById(id);
+const viewHome = $('view-home'), viewSession = $('view-session'), actionBar = $('action-bar');
+
+function showHome() {
+  current = null;
+  viewSession.hidden = true;
+  viewHome.hidden = false;
+  actionBar.classList.remove('visible');
+  renderDayCards();
+  window.scrollTo(0, 0);
+}
+
+function renderDayCards() {
+  const wrap = $('day-cards');
+  wrap.innerHTML = '';
+  for (const type of ['push', 'pull', 'legs']) {
+    const meta = DAY_META[type];
+    const last = lastSessionOfType(type);
+    const btn = document.createElement('button');
+    btn.className = 'day-card';
+    btn.style.setProperty('--pc', meta.color);
+    btn.innerHTML =
+      '<span class="plate" aria-hidden="true"></span>' +
+      '<span><span class="day-name">' + meta.label + '</span><br>' +
+      '<span class="day-last">' + (last ? 'Last: ' + prettyDate(last.date) + ' · ' + last.entries.length + ' exercises' : 'No sessions yet') + '</span></span>' +
+      '<span class="chev" aria-hidden="true">›</span>';
+    btn.addEventListener('click', () => startSession(type));
+    wrap.appendChild(btn);
+  }
+}
+
+function showSession() {
+  const meta = DAY_META[current.type];
+  viewHome.hidden = true;
+  viewSession.hidden = false;
+  viewSession.style.setProperty('--pc', meta.color);
+  actionBar.classList.add('visible');
+  actionBar.style.setProperty('--pc', meta.color);
+  $('session-title').textContent = meta.label + ' Day';
+  $('session-date').textContent = prettyDate(todayISO());
+  $('prefill-note').textContent = current.prefilledFrom
+    ? 'Loaded from your last ' + meta.label.toLowerCase() + ' session (' + prettyDate(current.prefilledFrom) + ') — adjust as you go.'
+    : 'Fresh start — add your first exercise below.';
+  $('add-input').value = '';
+  hideSuggestions();
+  renderExercises();
+  window.scrollTo(0, 0);
+}
+
+function renderExercises() {
+  const list = $('exercise-list');
+  list.innerHTML = '';
+  if (!current.entries.length) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'No exercises yet.';
+    list.appendChild(p);
+    return;
+  }
+  current.entries.forEach((entry, ei) => {
+    const card = document.createElement('div');
+    card.className = 'exercise-card';
+
+    const top = document.createElement('div');
+    top.className = 'exercise-top';
+    const name = document.createElement('span');
+    name.className = 'exercise-name';
+    name.textContent = entry.name;
+    const rm = document.createElement('button');
+    rm.className = 'icon-btn';
+    rm.setAttribute('aria-label', 'Remove ' + entry.name);
+    rm.textContent = '×';
+    rm.addEventListener('click', () => {
+      if (confirm('Remove ' + entry.name + ' from today?')) {
+        current.entries.splice(ei, 1);
+        renderExercises();
+      }
+    });
+    top.append(name, rm);
+    card.appendChild(top);
+
+    entry.sets.forEach((set, si) => {
+      const row = document.createElement('div');
+      row.className = 'set-row';
+
+      const label = document.createElement('span');
+      label.className = 'set-label';
+      label.textContent = 'Set ' + (si + 1);
+
+      const weight = document.createElement('input');
+      weight.type = 'text';
+      weight.inputMode = 'decimal';
+      weight.placeholder = 'kg';
+      weight.value = set.weight;
+      weight.setAttribute('aria-label', entry.name + ' set ' + (si + 1) + ' weight in kg');
+      weight.addEventListener('input', () => { set.weight = weight.value; });
+
+      const x = document.createElement('span');
+      x.className = 'set-x';
+      x.textContent = '×';
+      x.setAttribute('aria-hidden', 'true');
+
+      const reps = document.createElement('input');
+      reps.type = 'text';
+      reps.inputMode = 'numeric';
+      reps.placeholder = 'reps';
+      reps.value = set.reps;
+      reps.setAttribute('aria-label', entry.name + ' set ' + (si + 1) + ' reps');
+      reps.addEventListener('input', () => { set.reps = reps.value; });
+
+      const rmSet = document.createElement('button');
+      rmSet.className = 'set-remove';
+      rmSet.setAttribute('aria-label', 'Remove set ' + (si + 1));
+      rmSet.textContent = '–';
+      rmSet.addEventListener('click', () => {
+        entry.sets.splice(si, 1);
+        renderExercises();
+      });
+
+      row.append(label, weight, x, reps, rmSet);
+      card.appendChild(row);
+    });
+
+    const addSet = document.createElement('button');
+    addSet.className = 'add-set-btn';
+    addSet.textContent = '+ Add set';
+    addSet.addEventListener('click', () => {
+      const prev = entry.sets[entry.sets.length - 1];
+      entry.sets.push({ weight: prev ? prev.weight : '', reps: prev ? prev.reps : '' });
+      renderExercises();
+    });
+    card.appendChild(addSet);
+
+    list.appendChild(card);
+  });
+}
+
+/* ---------------- Add exercise ---------------- */
+
+function catalogFor(type) {
+  const names = SEED[type].concat(data.customExercises[type] || []);
+  return [...new Set(names)];
+}
+
+function hideSuggestions() {
+  $('suggestions').hidden = true;
+}
+
+function renderSuggestions() {
+  const box = $('suggestions');
+  const q = $('add-input').value.trim();
+  const inSession = new Set(current.entries.map(e => e.name.toLowerCase()));
+  const catalog = catalogFor(current.type).filter(n => !inSession.has(n.toLowerCase()));
+  const matches = (q ? catalog.filter(n => n.toLowerCase().includes(q.toLowerCase())) : catalog).slice(0, 8);
+  const exact = catalog.some(n => n.toLowerCase() === q.toLowerCase()) ||
+                inSession.has(q.toLowerCase());
+
+  box.innerHTML = '';
+  matches.forEach(name => {
+    const b = document.createElement('button');
+    b.textContent = name;
+    b.addEventListener('click', () => addExercise(name));
+    box.appendChild(b);
+  });
+  if (q && !exact) {
+    const b = document.createElement('button');
+    b.className = 'add-new';
+    b.textContent = '+ Add “' + q + '” as a new exercise';
+    b.addEventListener('click', () => {
+      data.customExercises[current.type].push(q);
+      saveData(data);
+      addExercise(q);
+    });
+    box.appendChild(b);
+  }
+  box.hidden = box.children.length === 0;
+}
+
+function addExercise(name) {
+  current.entries.push({ name, sets: [{ weight: '', reps: '' }] });
+  $('add-input').value = '';
+  hideSuggestions();
+  renderExercises();
+}
+
+$('add-input').addEventListener('input', renderSuggestions);
+$('add-input').addEventListener('focus', renderSuggestions);
+document.addEventListener('click', e => {
+  if (!e.target.closest('.add-exercise')) hideSuggestions();
+});
+
+/* ---------------- Actions ---------------- */
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+$('copy-btn').addEventListener('click', async () => {
+  if (!cleanedEntries().length) {
+    toast('Nothing to copy — enter some reps first');
+    return;
+  }
+  persistSession();
+  renderDayCards();
+  const ok = await copyText(buildLogText());
+  toast(ok ? 'Copied — paste it to your coach' : 'Copy failed — try again');
+});
+
+$('save-btn').addEventListener('click', () => {
+  if (!persistSession()) {
+    toast('Nothing to save — enter some reps first');
+    return;
+  }
+  toast('Session saved');
+  showHome();
+});
+
+$('back-btn').addEventListener('click', () => {
+  const saved = data.sessions.some(s => s.id === current.id);
+  if (!saved && cleanedEntries().length &&
+      !confirm('Leave without saving? Today’s entries will be lost.')) return;
+  showHome();
+});
+
+/* ---------------- Export / import ---------------- */
+
+$('export-btn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'replog-backup-' + todayISO() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+});
+
+$('import-btn').addEventListener('click', () => $('import-file').click());
+
+$('import-file').addEventListener('change', () => {
+  const file = $('import-file').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      if (!d || typeof d !== 'object' || !d.customExercises || !Array.isArray(d.sessions)) {
+        throw new Error('bad shape');
+      }
+      if (!confirm('Replace all data on this device with the backup (' + d.sessions.length + ' sessions)?')) return;
+      data = {
+        customExercises: {
+          push: d.customExercises.push || [],
+          pull: d.customExercises.pull || [],
+          legs: d.customExercises.legs || [],
+        },
+        sessions: d.sessions,
+      };
+      saveData(data);
+      renderDayCards();
+      toast('Backup imported');
+    } catch (e) {
+      toast('That file isn’t a Rep Log backup');
+    } finally {
+      $('import-file').value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* ---------------- Init ---------------- */
+
+showHome();
+</script>
+</body>
+</html>
