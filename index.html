@@ -79,6 +79,35 @@
   .day-card .day-last { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
   .day-card .chev { margin-left: auto; color: var(--muted); font-size: 22px; }
 
+  /* ---------- Install banner ---------- */
+  .install-banner[hidden] { display: none; }
+  .install-banner {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    font-size: 14px;
+  }
+  .install-banner p { margin: 0; flex: 1; color: var(--muted); }
+  .install-banner strong { color: var(--ink); font-weight: 600; }
+  .install-go {
+    flex: none;
+    background: var(--plate-red);
+    border: none; border-radius: 8px;
+    color: var(--ink);
+    font-weight: 600; font-size: 14px;
+    padding: 9px 16px;
+  }
+  .install-go:active { opacity: 0.85; }
+  .install-x {
+    flex: none;
+    background: none; border: none;
+    color: var(--muted); font-size: 15px;
+    padding: 6px;
+  }
+
   .home-tools { display: flex; gap: 10px; margin-top: 26px; }
   .tool-btn {
     flex: 1;
@@ -499,6 +528,11 @@
   <section id="view-home">
     <h1>Rep Log</h1>
     <p class="tagline">Pick today's split — your last session loads ready to edit.</p>
+    <div class="install-banner" id="install-banner" hidden>
+      <p id="install-msg"><strong>Install Rep Log</strong> — works offline, opens full screen.</p>
+      <button class="install-go" id="install-go">Install</button>
+      <button class="install-x" id="install-x" aria-label="Dismiss install banner">✕</button>
+    </div>
     <div id="day-cards"></div>
     <div class="home-tools">
       <button class="tool-btn" id="history-btn">History</button>
@@ -1511,6 +1545,54 @@ $('import-file').addEventListener('change', () => {
   };
   reader.readAsText(file);
 });
+
+/* ---------------- Install prompt ---------------- */
+
+// Browsers never auto-show an install popup; they fire beforeinstallprompt
+// and leave it to the page to offer install UI.
+const INSTALL_DISMISS_KEY = 'replog-install-dismissed';
+let installEvent = null;
+
+function isStandalone() {
+  return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+function showInstallBanner() {
+  if (isStandalone() || localStorage.getItem(INSTALL_DISMISS_KEY)) return;
+  $('install-banner').hidden = false;
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installEvent = e;
+  showInstallBanner();
+});
+
+window.addEventListener('appinstalled', () => {
+  installEvent = null;
+  $('install-banner').hidden = true;
+  toast('Rep Log installed — find it on your home screen');
+});
+
+$('install-go').addEventListener('click', async () => {
+  if (!installEvent) return;
+  installEvent.prompt();
+  await installEvent.userChoice;
+  installEvent = null;
+  $('install-banner').hidden = true;
+});
+
+$('install-x').addEventListener('click', () => {
+  localStorage.setItem(INSTALL_DISMISS_KEY, '1');
+  $('install-banner').hidden = true;
+});
+
+// iOS Safari never fires beforeinstallprompt — show manual steps instead.
+if (/iP(hone|ad|od)/.test(navigator.userAgent) && !isStandalone()) {
+  $('install-msg').innerHTML = '<strong>Install Rep Log</strong> — tap the Share button, then “Add to Home Screen”.';
+  $('install-go').hidden = true;
+  showInstallBanner();
+}
 
 /* ---------------- Init ---------------- */
 
