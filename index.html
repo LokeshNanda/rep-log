@@ -568,6 +568,7 @@
     </div>
     <div class="home-tools">
       <button class="tool-btn" id="rest-btn">Rest timer</button>
+      <button class="tool-btn" id="sync-btn">Website sync</button>
     </div>
   </section>
 
@@ -689,11 +690,12 @@ function loadData() {
       const d = JSON.parse(raw);
       if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) {
         d.settings = normalizeSettings(d.settings);
+        d.syncQueue = Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [];
         return d;
       }
     }
   } catch (e) { /* fall through to fresh data */ }
-  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null) };
+  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null), syncQueue: [] };
 }
 
 function normalizeSettings(s) {
@@ -702,6 +704,8 @@ function normalizeSettings(s) {
     timeZone: typeof s.timeZone === 'string' ? s.timeZone : null,
     unit: s.unit === 'lb' ? 'lb' : 'kg',
     restSeconds: [0, 60, 90, 120].includes(s.restSeconds) ? s.restSeconds : 90,
+    // Token for pushing gym-day counts to lokeshnanda.com (travels with backups)
+    syncToken: typeof s.syncToken === 'string' && s.syncToken ? s.syncToken : null,
   };
 }
 
@@ -809,7 +813,9 @@ function persistRecord(record) {
   const idx = data.sessions.findIndex(s => s.id === record.id);
   if (idx >= 0) data.sessions[idx] = record;
   else data.sessions.push(record);
+  queueGymSync(record.date);
   saveData(data);
+  flushGymSync(); // fire-and-forget; offline saves stay queued
 }
 
 function persistSession() {
@@ -1605,6 +1611,62 @@ $('unit-btn').addEventListener('click', () => {
   toast('New logs will use ' + data.settings.unit + ' — saved history keeps its unit');
 });
 
+/* ---------------- Website sync ----------------
+   Opt-in: pushes gym DAYS (dates only — never exercises, weights or times)
+   to lokeshnanda.com/now via a token-authed Worker endpoint. Saved sessions
+   queue locally and flush whenever the app is online. */
+
+const SYNC_URL = 'https://api.lokeshnanda.com/gym';
+
+function queueGymSync(date) {
+  if (!data.settings.syncToken || !date) return;
+  if (!data.syncQueue.includes(date)) data.syncQueue.push(date);
+}
+
+let syncFlushing = false;
+async function flushGymSync() {
+  if (syncFlushing || !data.settings.syncToken || !data.syncQueue.length) return;
+  syncFlushing = true;
+  try {
+    while (data.syncQueue.length) {
+      const date = data.syncQueue[0];
+      const res = await fetch(SYNC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, token: data.settings.syncToken }),
+      });
+      if (res.status === 401) { toast('Website sync token rejected — check Website sync'); break; }
+      if (!res.ok) break; // transient — retry next time
+      data.syncQueue.shift();
+      saveData(data);
+    }
+  } catch (e) { /* offline — queue stays, retried on next open */ }
+  syncFlushing = false;
+}
+
+function renderSyncButton() {
+  $('sync-btn').textContent = 'Website sync · ' + (data.settings.syncToken ? 'on' : 'off');
+}
+
+$('sync-btn').addEventListener('click', () => {
+  const entered = prompt(
+    'Sync gym days (dates only) to lokeshnanda.com.\nPaste the sync token, or leave blank to turn off:',
+    data.settings.syncToken || ''
+  );
+  if (entered === null) return;
+  data.settings.syncToken = entered.trim() || null;
+  saveData(data);
+  renderSyncButton();
+  if (data.settings.syncToken) {
+    toast('Website sync on — sessions push automatically');
+    flushGymSync();
+  } else {
+    toast('Website sync off');
+  }
+});
+
+window.addEventListener('online', flushGymSync);
+
 /* ---------------- Export / import ---------------- */
 
 $('export-btn').addEventListener('click', () => {
@@ -1708,6 +1770,8 @@ if (/iP(hone|ad|od)/.test(navigator.userAgent) && !isStandalone()) {
 renderTzButton();
 renderUnitButton();
 renderRestButton();
+renderSyncButton();
+flushGymSync();
 if (navigator.share) $('share-btn').hidden = false;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 showHome();
