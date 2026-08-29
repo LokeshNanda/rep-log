@@ -481,6 +481,113 @@
   .history-actions button:active { filter: brightness(1.15); }
   .history-actions .danger { color: var(--plate-red); }
 
+  /* ---------- Resume unfinished session ---------- */
+  .resume-card {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--pc, var(--line));
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .resume-info { flex: 1; min-width: 0; }
+  .resume-title {
+    font-family: var(--display);
+    font-weight: 700; font-size: 19px;
+    letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--pc, var(--ink));
+  }
+  .resume-meta { color: var(--muted); font-size: 13px; }
+  .resume-go {
+    flex: none;
+    background: var(--pc, var(--ink));
+    border: none; border-radius: 8px;
+    color: #101114;
+    font-weight: 700; font-size: 14px;
+    padding: 9px 16px;
+  }
+  .resume-x {
+    flex: none;
+    background: none; border: none;
+    color: var(--muted); font-size: 15px;
+    padding: 6px;
+  }
+
+  /* ---------- Calendar ---------- */
+  .streak-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .streak-cell {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 6px;
+    text-align: center;
+  }
+  .streak-num {
+    display: block;
+    font-family: var(--display);
+    font-weight: 700; font-size: 30px;
+    line-height: 1.1;
+  }
+  .streak-label {
+    color: var(--muted); font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-head button {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 18px;
+    padding: 4px 14px;
+  }
+  .cal-title {
+    font-family: var(--display);
+    font-weight: 600; font-size: 21px;
+    letter-spacing: 0.02em;
+  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow {
+    color: var(--muted); font-size: 11px;
+    text-align: center; padding: 4px 0;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    background: none; border: none; border-radius: 8px;
+    font-size: 13px; color: var(--muted);
+    padding: 0;
+  }
+  .cal-cell.trained {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+  .cal-cell.today { outline: 1.5px solid var(--muted); outline-offset: -1.5px; }
+  .cal-dots { display: flex; gap: 3px; height: 5px; }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  /* ---------- Custom exercise manager ---------- */
+  .exlist-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .exlist-row:last-child { border-bottom: none; }
+  .exlist-name { flex: 1; min-width: 0; font-size: 15.5px; overflow-wrap: anywhere; }
+  .exlist-row button {
+    flex: none;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 7px 11px;
+  }
+  .exlist-row .danger { color: var(--plate-red); }
+
   /* ---------- Rest timer chip ---------- */
   .rest-chip[hidden] { display: none; }
   .rest-chip {
@@ -556,6 +663,7 @@
     <div id="day-cards"></div>
     <div class="home-tools">
       <button class="tool-btn" id="history-btn">History</button>
+      <button class="tool-btn" id="calendar-btn">Calendar</button>
     </div>
     <div class="home-tools">
       <button class="tool-btn" id="export-btn">Export backup</button>
@@ -569,6 +677,9 @@
     <div class="home-tools">
       <button class="tool-btn" id="rest-btn">Rest timer</button>
       <button class="tool-btn" id="sync-btn">Website sync</button>
+    </div>
+    <div class="home-tools">
+      <button class="tool-btn" id="exercises-btn">Custom exercises</button>
     </div>
   </section>
 
@@ -631,6 +742,27 @@
     <button class="back-btn" id="history-back">‹ Back</button>
     <h2 class="history-title">History</h2>
     <div id="history-body"></div>
+  </section>
+
+  <section id="view-calendar" hidden>
+    <button class="back-btn" id="calendar-back">‹ Back</button>
+    <h2 class="history-title">Calendar</h2>
+    <div class="streak-row" id="streak-row"></div>
+    <div class="aux-card">
+      <div class="cal-head">
+        <button id="cal-prev" aria-label="Previous month">‹</button>
+        <span class="cal-title" id="cal-title"></span>
+        <button id="cal-next" aria-label="Next month">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <p class="empty-note">Tap a marked day to open that session.</p>
+  </section>
+
+  <section id="view-exercises" hidden>
+    <button class="back-btn" id="exercises-back">‹ Back</button>
+    <h2 class="history-title">Custom exercises</h2>
+    <div id="exercises-body"></div>
   </section>
 
 </div>
@@ -717,9 +849,39 @@ let data = loadData();
 
 /* ---------------- Session state ---------------- */
 
-// current = { type, id, entries: [{ name, sets: [{ weight, reps }] }] }
+// current = { type, id, date, entries: [{ name, sets: [{ weight, reps }] }] }
 // weight/reps are strings while editing; cleaned on save/copy.
+// current.editing is set when a saved session is re-opened from History.
 let current = null;
+
+/* ---------------- Draft autosave ----------------
+   The in-progress session is mirrored to localStorage on every change,
+   so a tab reload mid-workout loses nothing. The home screen offers to
+   resume it; cleared on save or when the user leaves on purpose.
+   History edits are excluded: the saved record is their safety net. */
+
+const DRAFT_KEY = 'replog-draft-v1';
+
+function saveDraft() {
+  if (!current || current.editing) return;
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(current)); } catch (e) { /* storage full, skip */ }
+}
+
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY));
+    if (d && typeof d === 'object' && DAY_META[d.type] && Array.isArray(d.entries)) return d;
+  } catch (e) { /* corrupt draft, ignore */ }
+  return null;
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function draftHasWork(d) {
+  return (d.entries || []).some(e => (e.sets || []).some(s => parseInt(s.reps, 10) > 0));
+}
 
 function lastSessionOfType(type) {
   for (let i = data.sessions.length - 1; i >= 0; i--) {
@@ -731,9 +893,12 @@ function lastSessionOfType(type) {
 // Most recent logged sets for an exercise, for the "was 40kg×12" hints.
 // Excludes the in-progress session: Copy persists mid-workout, and without
 // the exclusion the hint would mirror today's own numbers.
-function lastSetsFor(name) {
+// beforeIndex (optional) limits the scan to sessions before that index,
+// so editing an old session shows hints from its past, not its future.
+function lastSetsFor(name, beforeIndex) {
   const needle = name.toLowerCase();
-  for (let i = data.sessions.length - 1; i >= 0; i--) {
+  const start = beforeIndex == null || beforeIndex < 0 ? data.sessions.length - 1 : beforeIndex - 1;
+  for (let i = start; i >= 0; i--) {
     const rec = data.sessions[i];
     if (current && rec.id === current.id) continue;
     const entry = (rec.entries || []).find(e => e.name.toLowerCase() === needle);
@@ -743,6 +908,10 @@ function lastSetsFor(name) {
 }
 
 function startSession(type) {
+  const draft = loadDraft();
+  if (draft && draftHasWork(draft) &&
+      !confirm('Discard the unfinished ' + DAY_META[draft.type].label + ' session and start fresh?')) return;
+  clearDraft();
   const last = lastSessionOfType(type);
   const entries = last
     ? last.entries.map(e => ({
@@ -756,6 +925,7 @@ function startSession(type) {
   current = {
     type,
     id: 'sess-' + Date.now(),
+    date: todayISO(),
     entries,   // prev hints attached below, after `current` exists
 
     prefilledFrom: last ? last.date : null,
@@ -795,7 +965,7 @@ function buildRecord() {
   const warmMins = parseInt(current.warmup.minutes, 10);
   const stretchMins = parseInt(current.stretchMins, 10);
   return {
-    id: current.id, date: todayISO(), type: current.type, entries,
+    id: current.id, date: current.date || todayISO(), type: current.type, entries,
     warmup: {
       activity: current.warmup.activity.trim() || null,
       minutes: warmMins > 0 ? warmMins : null,
@@ -804,8 +974,9 @@ function buildRecord() {
     notes: current.notes.trim() || null,
     clockIn: current.clockIn,
     clockOut: current.clockOut,
-    timeZone: activeZone(),
-    unit: data.settings.unit,
+    // Edits keep the record's original zone and unit; new sessions use settings.
+    timeZone: current.editing && current.timeZone ? current.timeZone : activeZone(),
+    unit: current.editing && current.unit ? current.unit : data.settings.unit,
   };
 }
 
@@ -828,8 +999,9 @@ function persistSession() {
 /* ---------------- Formatting ---------------- */
 
 function todayISO() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  // en-CA formats as YYYY-MM-DD; use the chosen zone, not device time,
+  // so a session near midnight gets the date the lifter's clock-in shows.
+  return new Intl.DateTimeFormat('en-CA', { timeZone: activeZone() }).format(new Date());
 }
 
 function prettyDate(iso) {
@@ -920,7 +1092,7 @@ function buildLogText(record) {
 
 const $ = id => document.getElementById(id);
 const actionBar = $('action-bar');
-const VIEWS = ['view-home', 'view-session', 'view-history'];
+const VIEWS = ['view-home', 'view-session', 'view-history', 'view-calendar', 'view-exercises'];
 
 function showView(id) {
   for (const v of VIEWS) $(v).hidden = v !== id;
@@ -938,6 +1110,39 @@ function showHome() {
 function renderDayCards() {
   const wrap = $('day-cards');
   wrap.innerHTML = '';
+
+  const draft = loadDraft();
+  if (draft) {
+    const meta = DAY_META[draft.type];
+    const card = document.createElement('div');
+    card.className = 'resume-card';
+    card.style.setProperty('--pc', meta.color);
+    const info = document.createElement('div');
+    info.className = 'resume-info';
+    const title = document.createElement('div');
+    title.className = 'resume-title';
+    title.textContent = 'Unfinished ' + meta.label + ' session';
+    const sub = document.createElement('div');
+    sub.className = 'resume-meta';
+    sub.textContent = prettyDate(draft.date || todayISO()) + ' · ' + (draft.entries || []).length + ' exercises';
+    info.append(title, sub);
+    const go = document.createElement('button');
+    go.className = 'resume-go';
+    go.textContent = 'Resume';
+    go.addEventListener('click', () => { current = draft; showSession(); });
+    const x = document.createElement('button');
+    x.className = 'resume-x';
+    x.setAttribute('aria-label', 'Discard unfinished session');
+    x.textContent = '✕';
+    x.addEventListener('click', () => {
+      if (draftHasWork(draft) && !confirm('Discard the unfinished ' + meta.label + ' session?')) return;
+      clearDraft();
+      renderDayCards();
+    });
+    card.append(info, go, x);
+    wrap.appendChild(card);
+  }
+
   for (const type of ['push', 'pull', 'legs']) {
     const meta = DAY_META[type];
     const last = lastSessionOfType(type);
@@ -960,8 +1165,10 @@ function showSession() {
   actionBar.style.setProperty('--pc', meta.color);
   $('rest-chip').style.setProperty('--pc', meta.color);
   $('session-title').textContent = meta.label + ' Day';
-  $('session-date').textContent = prettyDate(todayISO());
-  $('prefill-note').textContent = current.prefilledFrom
+  $('session-date').textContent = prettyDate(current.date || todayISO());
+  $('prefill-note').textContent = current.editing
+    ? 'Editing this saved session. Finish & Save overwrites it.'
+    : current.prefilledFrom
     ? 'Loaded from your last ' + meta.label.toLowerCase() + ' session (' + prettyDate(current.prefilledFrom) + ') — adjust as you go.'
     : 'Fresh start — add your first exercise below.';
   $('add-input').value = '';
@@ -1031,6 +1238,11 @@ function renderHistoryDetail(body, rec) {
   const actions = document.createElement('div');
   actions.className = 'history-actions';
 
+  const editBtn = document.createElement('button');
+  editBtn.textContent = 'Edit';
+  editBtn.addEventListener('click', () => editSession(rec));
+  actions.appendChild(editBtn);
+
   const copyBtn = document.createElement('button');
   copyBtn.textContent = 'Copy';
   copyBtn.addEventListener('click', async () => {
@@ -1062,6 +1274,47 @@ function renderHistoryDetail(body, rec) {
   body.appendChild(actions);
 }
 
+// Re-opens a saved session in the session editor; Finish & Save overwrites
+// it in place, keeping its original id, date, unit, and time zone.
+function editSession(rec) {
+  const idx = data.sessions.findIndex(s => s.id === rec.id);
+  current = {
+    type: rec.type,
+    id: rec.id,
+    date: rec.date,
+    editing: true,
+    unit: rec.unit || 'kg',
+    timeZone: rec.timeZone || activeZone(),
+    entries: (rec.entries || []).map(e => ({
+      name: e.name,
+      sets: e.sets.map(s => ({
+        weight: s.weight == null ? '' : String(s.weight),
+        reps: s.reps == null ? '' : String(s.reps),
+      })),
+    })),
+    prefilledFrom: null,
+    warmup: {
+      activity: rec.warmup && rec.warmup.activity ? rec.warmup.activity : '',
+      minutes: rec.warmup && rec.warmup.minutes != null ? String(rec.warmup.minutes) : '',
+    },
+    stretchMins: rec.stretch && rec.stretch.minutes != null ? String(rec.stretch.minutes) : '',
+    notes: rec.notes || '',
+    clockIn: rec.clockIn || null,
+    clockOut: rec.clockOut || null,
+  };
+  current.entries.forEach(e => { e.prev = lastSetsFor(e.name, idx); });
+  showSession();
+}
+
+// Leaves the session view for the History detail of the given record.
+function backToHistoryDetail(id) {
+  current = null;
+  hideRestChip();
+  historyDetailId = id;
+  renderHistory();
+  showView('view-history');
+}
+
 $('history-btn').addEventListener('click', showHistory);
 $('history-back').addEventListener('click', () => {
   if (historyDetailId) {
@@ -1071,6 +1324,129 @@ $('history-back').addEventListener('click', () => {
   } else {
     showHome();
   }
+});
+
+/* ---------------- Consistency calendar ---------------- */
+
+let calYear = 0, calMonth = 0; // calMonth is 0-based
+
+function showCalendar() {
+  const [y, m] = todayISO().split('-').map(Number);
+  calYear = y;
+  calMonth = m - 1;
+  renderCalendar();
+  showView('view-calendar');
+}
+
+function sessionsByDate() {
+  const map = new Map();
+  for (const s of data.sessions) {
+    if (!map.has(s.date)) map.set(s.date, []);
+    map.get(s.date).push(s);
+  }
+  return map;
+}
+
+function addDaysISO(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
+function streakStats(byDate) {
+  const dates = [...byDate.keys()].sort();
+  let longest = 0, run = 0, prev = null;
+  for (const d of dates) {
+    run = prev && addDaysISO(prev, 1) === d ? run + 1 : 1;
+    if (run > longest) longest = run;
+    prev = d;
+  }
+  // Current streak counts back from today, or from yesterday so a streak
+  // isn't shown as broken before today's session is logged.
+  let cur = 0;
+  let d = todayISO();
+  if (!byDate.has(d)) d = addDaysISO(d, -1);
+  while (byDate.has(d)) { cur++; d = addDaysISO(d, -1); }
+  return { current: cur, longest };
+}
+
+function renderCalendar() {
+  const byDate = sessionsByDate();
+  const stats = streakStats(byDate);
+  const monthKey = calYear + '-' + String(calMonth + 1).padStart(2, '0');
+  let monthDays = 0;
+  for (const d of byDate.keys()) if (d.startsWith(monthKey)) monthDays++;
+
+  const row = $('streak-row');
+  row.innerHTML = '';
+  for (const [num, label] of [[stats.current, 'Day streak'], [stats.longest, 'Best streak'], [monthDays, 'This month']]) {
+    const cell = document.createElement('div');
+    cell.className = 'streak-cell';
+    const n = document.createElement('span');
+    n.className = 'streak-num';
+    n.textContent = num;
+    const l = document.createElement('span');
+    l.className = 'streak-label';
+    l.textContent = label;
+    cell.append(n, l);
+    row.appendChild(cell);
+  }
+
+  $('cal-title').textContent = new Date(calYear, calMonth, 1)
+    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+  const grid = $('cal-grid');
+  grid.innerHTML = '';
+  for (const dow of ['M', 'T', 'W', 'T', 'F', 'S', 'S']) {
+    const h = document.createElement('div');
+    h.className = 'cal-dow';
+    h.textContent = dow;
+    grid.appendChild(h);
+  }
+  const offset = (new Date(calYear, calMonth, 1).getDay() + 6) % 7; // Monday-first
+  for (let i = 0; i < offset; i++) grid.appendChild(document.createElement('div'));
+
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = todayISO();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = monthKey + '-' + String(day).padStart(2, '0');
+    const recs = byDate.get(iso);
+    const cell = document.createElement(recs ? 'button' : 'div');
+    cell.className = 'cal-cell' + (recs ? ' trained' : '') + (iso === today ? ' today' : '');
+    const num = document.createElement('span');
+    num.textContent = day;
+    cell.appendChild(num);
+    if (recs) {
+      const dots = document.createElement('span');
+      dots.className = 'cal-dots';
+      for (const type of [...new Set(recs.map(r => r.type))]) {
+        const dot = document.createElement('span');
+        dot.className = 'cal-dot';
+        dot.style.background = (DAY_META[type] || { color: 'var(--muted)' }).color;
+        dots.appendChild(dot);
+      }
+      cell.appendChild(dots);
+      cell.setAttribute('aria-label', prettyDate(iso) + ', ' + recs.length + ' session' + (recs.length === 1 ? '' : 's'));
+      cell.addEventListener('click', () => {
+        historyDetailId = recs[recs.length - 1].id;
+        renderHistory();
+        showView('view-history');
+      });
+    }
+    grid.appendChild(cell);
+  }
+}
+
+$('calendar-btn').addEventListener('click', showCalendar);
+$('calendar-back').addEventListener('click', showHome);
+$('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+$('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
 });
 
 /* ---------------- Clock in / out ---------------- */
@@ -1089,6 +1465,7 @@ function updateClockUI() {
   } else {
     note.hidden = true;
   }
+  saveDraft();
 }
 
 $('clockin-btn').addEventListener('click', () => { current.clockIn = nowInZone(); updateClockUI(); });
@@ -1101,7 +1478,9 @@ $('clockout-input').addEventListener('input', e => {
 });
 
 // If they clocked in but forgot to clock out, offer to stamp it at copy/save time.
+// Skipped while editing a past session: "now" would be the wrong day.
 function ensureClockOut() {
+  if (current.editing) return;
   if (current.clockIn && !current.clockOut) {
     const t = nowInZone();
     if (confirm('Clock out now at ' + t + ' ' + zoneAbbr(activeZone()) + '?')) {
@@ -1207,6 +1586,7 @@ document.querySelectorAll('.chip').forEach(c => {
     current.stretchMins = c.dataset.mins;
     $('stretch-mins').value = c.dataset.mins;
     updateStretchChips();
+    saveDraft();
   });
 });
 
@@ -1217,6 +1597,9 @@ $('stretch-mins').addEventListener('input', e => {
 
 $('notes-input').addEventListener('input', e => { current.notes = e.target.value; });
 
+// Any typing inside the session view (weights, reps, warm-up, notes) refreshes the draft.
+$('view-session').addEventListener('input', saveDraft);
+
 function renderExercises() {
   const list = $('exercise-list');
   list.innerHTML = '';
@@ -1225,6 +1608,7 @@ function renderExercises() {
     p.className = 'empty-note';
     p.textContent = 'No exercises yet.';
     list.appendChild(p);
+    saveDraft();
     return;
   }
   current.entries.forEach((entry, ei) => {
@@ -1269,7 +1653,7 @@ function renderExercises() {
       const weight = document.createElement('input');
       weight.type = 'text';
       weight.inputMode = 'decimal';
-      weight.placeholder = data.settings.unit;
+      weight.placeholder = current.editing && current.unit ? current.unit : data.settings.unit;
       weight.value = set.weight;
       weight.setAttribute('aria-label', entry.name + ' set ' + (si + 1) + ' weight in kg');
       weight.addEventListener('input', () => { set.weight = weight.value; });
@@ -1293,7 +1677,7 @@ function renderExercises() {
       tick.textContent = '✓';
       tick.addEventListener('click', () => {
         set.done = !set.done;
-        if (set.done) startRestTimer();
+        if (set.done && !current.editing) startRestTimer();
         renderExercises();
       });
 
@@ -1330,6 +1714,7 @@ function renderExercises() {
 
     list.appendChild(card);
   });
+  saveDraft();
 }
 
 /* ---------------- Reorder exercises ---------------- */
@@ -1454,7 +1839,8 @@ function renderSuggestions() {
 }
 
 function addExercise(name) {
-  current.entries.push({ name, sets: [{ weight: '', reps: '' }], prev: lastSetsFor(name) });
+  const idx = current.editing ? data.sessions.findIndex(s => s.id === current.id) : null;
+  current.entries.push({ name, sets: [{ weight: '', reps: '' }], prev: lastSetsFor(name, idx) });
   $('add-input').value = '';
   hideSuggestions();
   renderExercises();
@@ -1529,18 +1915,32 @@ $('copy-btn').addEventListener('click', async () => {
 
 $('save-btn').addEventListener('click', () => {
   if (cleanedEntries().length) ensureClockOut();
+  const wasEditing = current.editing;
+  const id = current.id;
   if (!persistSession()) {
     toast('Nothing to save — enter some reps first');
     return;
   }
-  toast('Session saved');
-  showHome();
+  if (wasEditing) {
+    toast('Session updated');
+    backToHistoryDetail(id);
+  } else {
+    clearDraft();
+    toast('Session saved');
+    showHome();
+  }
 });
 
 $('back-btn').addEventListener('click', () => {
+  if (current.editing) {
+    if (!confirm('Leave without saving your changes?')) return;
+    backToHistoryDetail(current.id);
+    return;
+  }
   const saved = data.sessions.some(s => s.id === current.id);
   if (!saved && cleanedEntries().length &&
       !confirm('Leave without saving? Today’s entries will be lost.')) return;
+  clearDraft();
   showHome();
 });
 
@@ -1610,6 +2010,105 @@ $('unit-btn').addEventListener('click', () => {
   renderUnitButton();
   toast('New logs will use ' + data.settings.unit + ' — saved history keeps its unit');
 });
+
+/* ---------------- Custom exercise manager ----------------
+   Lists user-added exercises per day type with rename and delete.
+   Delete only removes the suggestion; past sessions keep the name.
+   Rename can optionally update past sessions too, so the "was" hints
+   and any future progress views follow the corrected name. */
+
+function showExerciseManager() {
+  renderExerciseManager();
+  showView('view-exercises');
+}
+
+function renderExerciseManager() {
+  const body = $('exercises-body');
+  body.innerHTML = '';
+  let any = false;
+  for (const type of ['push', 'pull', 'legs']) {
+    const names = data.customExercises[type] || [];
+    if (!names.length) continue;
+    any = true;
+    const card = document.createElement('div');
+    card.className = 'aux-card';
+    card.style.setProperty('--pc', DAY_META[type].color);
+    const head = document.createElement('div');
+    head.className = 'aux-head';
+    const title = document.createElement('span');
+    title.className = 'aux-title';
+    title.style.color = 'var(--pc)';
+    title.textContent = DAY_META[type].label;
+    head.appendChild(title);
+    card.appendChild(head);
+    names.forEach((name, i) => {
+      const row = document.createElement('div');
+      row.className = 'exlist-row';
+      const label = document.createElement('span');
+      label.className = 'exlist-name';
+      label.textContent = name;
+      const ren = document.createElement('button');
+      ren.textContent = 'Rename';
+      ren.addEventListener('click', () => renameCustomExercise(type, i));
+      const del = document.createElement('button');
+      del.className = 'danger';
+      del.textContent = 'Delete';
+      del.addEventListener('click', () => {
+        if (!confirm('Remove "' + name + '" from suggestions? Past sessions keep it.')) return;
+        data.customExercises[type].splice(i, 1);
+        saveData(data);
+        renderExerciseManager();
+        toast('Removed from suggestions');
+      });
+      row.append(label, ren, del);
+      card.appendChild(row);
+    });
+    body.appendChild(card);
+  }
+  if (!any) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'No custom exercises yet. Add one from a session and it shows up here.';
+    body.appendChild(p);
+  }
+}
+
+function historyUses(name) {
+  const needle = name.toLowerCase();
+  let n = 0;
+  for (const s of data.sessions) {
+    if ((s.entries || []).some(e => e.name.toLowerCase() === needle)) n++;
+  }
+  return n;
+}
+
+function renameCustomExercise(type, index) {
+  const oldName = data.customExercises[type][index];
+  const entered = prompt('Rename "' + oldName + '" to:', oldName);
+  if (entered === null) return;
+  const newName = entered.trim();
+  if (!newName || newName === oldName) return;
+  // If the new name already exists in the catalog, merge instead of duplicating.
+  const existsElsewhere = catalogFor(type)
+    .some(n => n.toLowerCase() === newName.toLowerCase() && n.toLowerCase() !== oldName.toLowerCase());
+  if (existsElsewhere) data.customExercises[type].splice(index, 1);
+  else data.customExercises[type][index] = newName;
+  const uses = historyUses(oldName);
+  if (uses && confirm('Also rename it in ' + uses + ' past session' + (uses === 1 ? '' : 's') + '? This keeps history and hints consistent.')) {
+    const needle = oldName.toLowerCase();
+    for (const s of data.sessions) {
+      for (const e of s.entries || []) {
+        if (e.name.toLowerCase() === needle) e.name = newName;
+      }
+    }
+  }
+  saveData(data);
+  renderExerciseManager();
+  toast('Renamed to ' + newName);
+}
+
+$('exercises-btn').addEventListener('click', showExerciseManager);
+$('exercises-back').addEventListener('click', showHome);
 
 /* ---------------- Website sync ----------------
    Opt-in: pushes gym DAYS (dates only — never exercises, weights or times)
@@ -1702,11 +2201,15 @@ $('import-file').addEventListener('change', () => {
         },
         sessions: d.sessions,
         settings: normalizeSettings(d.settings),
+        syncQueue: Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [],
       };
       saveData(data);
       renderDayCards();
       renderTzButton();
       renderUnitButton();
+      renderRestButton();
+      renderSyncButton();
+      flushGymSync();
       toast('Backup imported');
     } catch (e) {
       toast('That file isn’t a Rep Log backup');

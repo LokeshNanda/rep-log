@@ -23,19 +23,24 @@ A workout logger for Push / Pull / Legs training, built to feed an LLM coach. In
    Notes: Right shoulder slightly tight
    ```
 
-6. **Finish & Save** stores the session. Browse, re-copy, or delete past sessions under **History**.
+6. **Finish & Save** stores the session. Browse, re-copy, edit, or delete past sessions under **History**; the **Calendar** shows your gym days, current streak, and best streak. If the app closes mid-workout, nothing is lost: the session is autosaved as a draft and the home screen offers to resume it.
 
 ## Settings (home screen)
 
 - **Time zone** — auto-detects your device; pin any IANA zone for travel.
 - **Units** — kg or lb (labels new logs; saved history keeps the unit it was logged in).
 - **Rest timer** — 60s / 90s / 120s / off.
+- **Custom exercises**: rename or delete exercises you've added; a rename can also update past sessions so hints stay consistent.
 
 ## Data
 
 Everything lives in your browser's localStorage — no server, no account. **Export backup / Import backup** moves your full history, custom exercises, and settings between devices. Leave the weight blank for bodyweight exercises (logged as `BW`).
 
 **Website sync (optional).** The "Website sync" setting pushes gym *days* — dates only, never exercises, weights or times — to the consistency grid on [lokeshnanda.com/now](https://lokeshnanda.com/now/). Paste the sync token once (it travels with backups); saved sessions then push automatically, with an offline queue that retries the next time the app opens. Blank the token to turn it off.
+
+## Roadmap
+
+The feature roadmap lives in [docs/ROADMAP.md](docs/ROADMAP.md). The primary use case is feeding an AI coach (the log is pasted daily into Google Fitbit's AI coach), so the coach loop leads the list.
 
 ## Deploying
 
