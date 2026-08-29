@@ -8,7 +8,7 @@ A workout logger for Push / Pull / Legs training, built to feed an LLM coach. In
 
 1. Tap **Push**, **Pull**, or **Legs** — your last session of that type loads with exercises, weights, reps, warm-up, and stretch prefilled. Each set shows a faint "was 40kg×12" hint from the previous time you did that exercise.
 2. Tap **Clock in** on arrival (stamps the time in your chosen time zone, editable). Log your warm-up activity and minutes.
-3. As you train, tick sets done — each tick starts the rest timer (60/90/120s, configurable on the home screen) with a vibration when time's up. Add/remove sets and exercises; custom exercise names are remembered.
+3. As you train, tick sets done — each tick starts the rest timer (60/90/120s, configurable on the home screen) with a vibration when time's up. Add/remove sets and exercises; custom exercise names are remembered. Removing a set or exercise shows an Undo toast instead of a confirmation. Tap an exercise's name to see its progress: best set, a trend sparkline, and recent sessions.
 4. Pick a stretch duration, jot optional notes for the coach, and tap **Clock out**.
 5. Tap **Copy for LLM** (or the share button to send straight to another app):
 

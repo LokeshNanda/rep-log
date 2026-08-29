@@ -16,7 +16,7 @@ The primary use case is feeding an AI coach: the log is pasted daily into Google
 
 ## 3. Progress insights (the data is already stored, just unused)
 
-- [ ] **Per-exercise progress**: tap an exercise name to see its history across sessions, best set, and a top-set trend as a small inline SVG sparkline.
+- [x] **Per-exercise progress**: tapping an exercise name in a session opens its history: best set, a top-set trend sparkline (weight, or reps for pure bodyweight exercises), and the last 15 sessions.
 - [ ] **PR detection**: on save, compare against history and toast "New PR: Bench Press 50kg×10".
 - [x] **Consistency calendar**: a Calendar view with a month grid of gym days (color-dotted by day type), current streak, best streak, and days trained this month. Tapping a marked day opens that session.
 - [ ] **Session summary on save**: total volume, total sets, duration versus your average.
@@ -27,7 +27,7 @@ The primary use case is feeding an AI coach: the log is pasted daily into Google
 - [ ] **Warm-up set flag and optional RPE**: mark warm-up sets so they don't pollute hints and stats; RPE makes the coach export far more useful.
 - [ ] **Plate calculator**: tap a target weight, see which plates to load per side.
 - [x] **Manage custom exercises**: a "Custom exercises" screen lists them per day type with rename and delete; renaming can optionally update past sessions too, so hints and history stay consistent.
-- [ ] **Undo instead of confirm** when removing sets or exercises (toast with Undo is faster mid-workout than a dialog).
+- [x] **Undo instead of confirm**: removing a set or an exercise happens immediately, with an Undo action in the toast instead of a blocking dialog.
 
 ## 5. Broader appeal (larger changes, later)
 
