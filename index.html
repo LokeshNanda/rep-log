@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#141518">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Rep Log</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -27,6 +29,7 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body {
     background: var(--bg);
     color: var(--ink);
@@ -35,7 +38,12 @@
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
   }
-  #app { max-width: 480px; margin: 0 auto; padding: 20px 16px 120px; }
+  button, input, textarea { -webkit-tap-highlight-color: transparent; }
+  button { touch-action: manipulation; }
+  #app {
+    max-width: 480px; margin: 0 auto;
+    padding: 20px 16px calc(120px + env(safe-area-inset-bottom));
+  }
 
   h1 {
     font-family: var(--display);
@@ -79,46 +87,40 @@
   .day-card .day-last { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
   .day-card .chev { margin-left: auto; color: var(--muted); font-size: 22px; }
 
-  /* ---------- Home: month heatmap + year count ---------- */
+  /* ---------- Home: compact month heatmap + year count ---------- */
   .month-card {
-    display: block; width: 100%;
+    display: flex; align-items: center; gap: 16px;
+    width: 100%;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 12px 16px;
     margin-bottom: 14px;
     text-align: left;
     transition: transform 0.06s ease;
   }
   .month-card:active { transform: scale(0.985); }
-  .month-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-  .month-title {
-    font-family: var(--display);
-    font-weight: 600; font-size: 21px;
-    letter-spacing: 0.02em;
+  .month-grid {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(7, 11px);
+    grid-auto-rows: 11px;
+    gap: 3px;
   }
-  .month-count { color: var(--muted); font-size: 13px; }
-  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .month-sq {
-    aspect-ratio: 1;
-    border-radius: 4px;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-  }
-  .month-sq.trained { border-color: transparent; }
-  .month-sq.future { background: none; border-style: dashed; opacity: 0.45; }
-  .month-sq.today { outline: 1.5px solid var(--muted); outline-offset: -1.5px; }
-  .year-line {
-    display: flex; align-items: baseline; gap: 8px;
-    margin-top: 12px;
-    color: var(--muted); font-size: 13px;
-  }
+  .month-sq { border-radius: 3px; background: var(--surface-2); }
+  .month-sq.trained { background: var(--plate-red); }
+  .month-sq.future { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+  .month-sq.today { outline: 1px solid var(--muted); outline-offset: 1px; }
+  .month-stats { flex: 1; min-width: 0; }
   .year-num {
+    display: block;
     font-family: var(--display);
-    font-weight: 700; font-size: 32px;
-    line-height: 1;
-    color: var(--ink);
+    font-weight: 700; font-size: 30px;
+    line-height: 1.1;
   }
+  .month-stats .stat-label { color: var(--muted); font-size: 13px; display: block; }
+  .month-stats .month-count { color: var(--muted); font-size: 13px; display: block; margin-top: 6px; }
+  .month-card .chev { color: var(--muted); font-size: 22px; flex: none; }
 
   /* ---------- Install banner ---------- */
   .install-banner[hidden] { display: none; }
@@ -149,17 +151,46 @@
     padding: 6px;
   }
 
-  .home-tools { display: flex; gap: 10px; margin-top: 26px; }
+  .home-tools { display: flex; gap: 10px; margin-top: 10px; }
+  #day-cards + .home-tools { margin-top: 26px; }
   .tool-btn {
     flex: 1;
+    min-width: 0;
     background: none;
     border: 1px solid var(--line);
     border-radius: 10px;
     color: var(--muted);
-    padding: 12px;
+    padding: 13px 10px;
     font-size: 14px;
+    overflow-wrap: anywhere;
   }
   .tool-btn:active { background: var(--surface); }
+  #history-btn, #calendar-btn {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--surface);
+  }
+  .more-tools { margin-top: 10px; }
+  .more-tools summary {
+    list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--muted);
+    padding: 13px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+  }
+  .more-tools summary::-webkit-details-marker { display: none; }
+  .more-tools summary::after {
+    content: '›';
+    font-size: 18px; line-height: 1;
+    transition: transform 0.15s ease;
+  }
+  .more-tools[open] summary::after { transform: rotate(90deg); }
+  .more-tools summary:active { background: var(--surface); }
 
   /* ---------- Session ---------- */
   .session-head {
@@ -224,9 +255,9 @@
   .icon-btn {
     background: none; border: none;
     color: var(--muted);
-    font-size: 20px; line-height: 1;
-    padding: 8px 10px;
-    margin: -8px -10px -8px auto;
+    font-size: 22px; line-height: 1;
+    padding: 10px 12px;
+    margin: -10px -12px -10px auto;
   }
   .set-row {
     display: flex; align-items: center; gap: 8px;
@@ -249,12 +280,12 @@
   .set-x { color: var(--muted); flex: none; }
   .set-tick {
     flex: none;
-    width: 32px; height: 32px;
+    width: 40px; height: 40px;
     border-radius: 50%;
     border: 1.5px solid var(--line);
     background: none;
     color: transparent;
-    font-size: 16px; line-height: 1;
+    font-size: 18px; line-height: 1;
     padding: 0;
   }
   .set-row.done .set-tick {
@@ -270,8 +301,9 @@
   }
   .set-remove {
     background: none; border: none;
-    color: var(--muted); font-size: 18px;
-    padding: 6px 8px; flex: none;
+    color: var(--muted); font-size: 20px;
+    padding: 10px; margin: -4px -4px -4px -2px;
+    flex: none;
   }
   .add-set-btn {
     background: none;
@@ -405,7 +437,7 @@
   .action-bar {
     position: fixed; left: 0; right: 0; bottom: 0;
     background: linear-gradient(to top, var(--bg) 70%, transparent);
-    padding: 18px 16px 20px;
+    padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
     display: none;
   }
   .action-bar.visible { display: block; }
@@ -450,7 +482,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
-    padding: 14px;
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
     display: flex; flex-direction: column; gap: 10px;
   }
   .tz-panel input {
@@ -638,7 +670,7 @@
   /* ---------- Rest timer chip ---------- */
   .rest-chip[hidden] { display: none; }
   .rest-chip {
-    position: fixed; left: 50%; bottom: 96px;
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom));
     transform: translateX(-50%);
     z-index: 40;
     display: flex; align-items: center; gap: 10px;
@@ -672,21 +704,22 @@
   }
   .rest-chip.done #rest-label { color: rgba(16,17,20,0.65); }
   .rest-chip.done button { border-color: rgba(16,17,20,0.35); }
-  body.rest-visible #toast { bottom: 172px; }
-  body.rest-visible #app { padding-bottom: 200px; }
+  body.rest-visible #toast { bottom: calc(172px + env(safe-area-inset-bottom)); }
+  body.rest-visible #app { padding-bottom: calc(200px + env(safe-area-inset-bottom)); }
 
   /* ---------- Toast ---------- */
   #toast {
-    position: fixed; left: 50%; bottom: 104px;
+    position: fixed; left: 50%; bottom: calc(104px + env(safe-area-inset-bottom));
     transform: translateX(-50%);
     background: var(--ink); color: #101114;
     font-size: 14.5px; font-weight: 600;
-    border-radius: 999px;
+    border-radius: 18px;
     padding: 10px 20px;
     opacity: 0; pointer-events: none;
     transition: opacity 0.25s ease;
     z-index: 50;
-    white-space: nowrap;
+    max-width: calc(100vw - 32px);
+    text-align: center;
   }
   #toast.show { opacity: 1; }
   #toast.undoable { pointer-events: auto; }
@@ -713,7 +746,7 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
-    padding: 16px 14px;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
     display: flex; flex-direction: column; gap: 10px;
     overflow-y: auto;
   }
@@ -761,22 +794,25 @@
       <button class="tool-btn" id="history-btn">History</button>
       <button class="tool-btn" id="calendar-btn">Calendar</button>
     </div>
-    <div class="home-tools">
-      <button class="tool-btn" id="export-btn">Export backup</button>
-      <button class="tool-btn" id="import-btn">Import backup</button>
-      <input type="file" id="import-file" accept="application/json,.json" hidden>
-    </div>
-    <div class="home-tools">
-      <button class="tool-btn" id="tz-btn">Time zone</button>
-      <button class="tool-btn" id="unit-btn">Units</button>
-    </div>
-    <div class="home-tools">
-      <button class="tool-btn" id="rest-btn">Rest timer</button>
-      <button class="tool-btn" id="sync-btn">Website sync</button>
-    </div>
-    <div class="home-tools">
-      <button class="tool-btn" id="exercises-btn">Custom exercises</button>
-    </div>
+    <details class="more-tools">
+      <summary>Settings &amp; data</summary>
+      <div class="home-tools">
+        <button class="tool-btn" id="rest-btn">Rest timer</button>
+        <button class="tool-btn" id="unit-btn">Units</button>
+      </div>
+      <div class="home-tools">
+        <button class="tool-btn" id="exercises-btn">Custom exercises</button>
+        <button class="tool-btn" id="tz-btn">Time zone</button>
+      </div>
+      <div class="home-tools">
+        <button class="tool-btn" id="export-btn">Export backup</button>
+        <button class="tool-btn" id="import-btn">Import backup</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <div class="home-tools">
+        <button class="tool-btn" id="sync-btn">Website sync</button>
+      </div>
+    </details>
   </section>
 
   <section id="view-session" hidden>
@@ -1268,11 +1304,10 @@ function renderDayCards() {
   renderHomeStats();
 }
 
-/* ---------------- Home stats: month heatmap + year count ----------------
-   GitHub-style grid for the current month: one square per day, filled with
-   the plate color of that day's session type(s) as workouts get logged.
-   Below it, the count of distinct days trained this year. Tapping the card
-   opens the full calendar. */
+/* ---------------- Home stats: compact month heatmap + year count ----------------
+   A small GitHub-style grid for the current month (one square per day,
+   single accent color when trained) next to the count of distinct days
+   trained this year. Tapping the card opens the full calendar. */
 
 function renderHomeStats() {
   const wrap = $('home-stats');
@@ -1293,18 +1328,6 @@ function renderHomeStats() {
   const card = document.createElement('button');
   card.className = 'month-card';
 
-  const head = document.createElement('div');
-  head.className = 'month-head';
-  const title = document.createElement('span');
-  title.className = 'month-title';
-  title.textContent = new Date(year, month - 1, 1)
-    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-  const count = document.createElement('span');
-  count.className = 'month-count';
-  count.textContent = monthCount + ' day' + (monthCount === 1 ? '' : 's') + ' this month';
-  head.append(title, count);
-  card.appendChild(head);
-
   const grid = document.createElement('div');
   grid.className = 'month-grid';
   grid.setAttribute('aria-hidden', 'true');
@@ -1313,38 +1336,39 @@ function renderHomeStats() {
   const daysInMonth = new Date(year, month, 0).getDate();
   for (let day = 1; day <= daysInMonth; day++) {
     const iso = monthKey + '-' + String(day).padStart(2, '0');
-    const recs = byDate.get(iso);
     const sq = document.createElement('div');
     sq.className = 'month-sq' +
-      (recs ? ' trained' : '') +
+      (byDate.has(iso) ? ' trained' : '') +
       (day > todayDay ? ' future' : '') +
       (iso === today ? ' today' : '');
-    if (recs) {
-      const colors = [...new Set(recs.map(r => r.type))]
-        .map(t => (DAY_META[t] || { color: 'var(--muted)' }).color);
-      sq.style.background = colors.length === 1
-        ? colors[0]
-        : 'linear-gradient(135deg, ' + colors.map((c, i) =>
-            c + ' ' + (i * 100 / colors.length) + '% ' + ((i + 1) * 100 / colors.length) + '%'
-          ).join(', ') + ')';
-    }
     grid.appendChild(sq);
   }
   card.appendChild(grid);
 
-  const yearLine = document.createElement('div');
-  yearLine.className = 'year-line';
+  const monthName = new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long' });
+  const stats = document.createElement('div');
+  stats.className = 'month-stats';
   const num = document.createElement('span');
   num.className = 'year-num';
   num.textContent = yearCount;
   const label = document.createElement('span');
+  label.className = 'stat-label';
   label.textContent = 'day' + (yearCount === 1 ? '' : 's') + ' trained in ' + year;
-  yearLine.append(num, label);
-  card.appendChild(yearLine);
+  const count = document.createElement('span');
+  count.className = 'month-count';
+  count.textContent = monthCount + ' in ' + monthName;
+  stats.append(num, label, count);
+  card.appendChild(stats);
+
+  const chev = document.createElement('span');
+  chev.className = 'chev';
+  chev.setAttribute('aria-hidden', 'true');
+  chev.textContent = '›';
+  card.appendChild(chev);
 
   card.setAttribute('aria-label',
-    title.textContent + ': trained ' + monthCount + ' day' + (monthCount === 1 ? '' : 's') +
-    ' this month, ' + yearCount + ' this year. Open calendar.');
+    yearCount + ' day' + (yearCount === 1 ? '' : 's') + ' trained in ' + year + ', ' +
+    monthCount + ' in ' + monthName + '. Open calendar.');
   card.addEventListener('click', showCalendar);
   wrap.appendChild(card);
 }

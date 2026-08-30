@@ -1,6 +1,6 @@
 // Rep Log service worker.
 // BUMP THIS on every deploy — manual Netlify drag-drop has no build step to do it.
-const CACHE = 'replog-v8';
+const CACHE = 'replog-v9';
 
 const PRECACHE = ['./', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
