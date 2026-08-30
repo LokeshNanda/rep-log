@@ -79,6 +79,47 @@
   .day-card .day-last { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
   .day-card .chev { margin-left: auto; color: var(--muted); font-size: 22px; }
 
+  /* ---------- Home: month heatmap + year count ---------- */
+  .month-card {
+    display: block; width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    text-align: left;
+    transition: transform 0.06s ease;
+  }
+  .month-card:active { transform: scale(0.985); }
+  .month-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+  .month-title {
+    font-family: var(--display);
+    font-weight: 600; font-size: 21px;
+    letter-spacing: 0.02em;
+  }
+  .month-count { color: var(--muted); font-size: 13px; }
+  .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .month-sq {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .month-sq.trained { border-color: transparent; }
+  .month-sq.future { background: none; border-style: dashed; opacity: 0.45; }
+  .month-sq.today { outline: 1.5px solid var(--muted); outline-offset: -1.5px; }
+  .year-line {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-top: 12px;
+    color: var(--muted); font-size: 13px;
+  }
+  .year-num {
+    font-family: var(--display);
+    font-weight: 700; font-size: 32px;
+    line-height: 1;
+    color: var(--ink);
+  }
+
   /* ---------- Install banner ---------- */
   .install-banner[hidden] { display: none; }
   .install-banner {
@@ -714,6 +755,7 @@
       <button class="install-go" id="install-go">Install</button>
       <button class="install-x" id="install-x" aria-label="Dismiss install banner">✕</button>
     </div>
+    <div id="home-stats"></div>
     <div id="day-cards"></div>
     <div class="home-tools">
       <button class="tool-btn" id="history-btn">History</button>
@@ -1223,6 +1265,88 @@ function renderDayCards() {
     btn.addEventListener('click', () => startSession(type));
     wrap.appendChild(btn);
   }
+  renderHomeStats();
+}
+
+/* ---------------- Home stats: month heatmap + year count ----------------
+   GitHub-style grid for the current month: one square per day, filled with
+   the plate color of that day's session type(s) as workouts get logged.
+   Below it, the count of distinct days trained this year. Tapping the card
+   opens the full calendar. */
+
+function renderHomeStats() {
+  const wrap = $('home-stats');
+  wrap.innerHTML = '';
+
+  const byDate = sessionsByDate();
+  const today = todayISO();
+  const [year, month, todayDay] = today.split('-').map(Number);
+  const monthKey = today.slice(0, 7);
+  const yearKey = today.slice(0, 4) + '-';
+
+  let monthCount = 0, yearCount = 0;
+  for (const d of byDate.keys()) {
+    if (d.startsWith(monthKey)) monthCount++;
+    if (d.startsWith(yearKey)) yearCount++;
+  }
+
+  const card = document.createElement('button');
+  card.className = 'month-card';
+
+  const head = document.createElement('div');
+  head.className = 'month-head';
+  const title = document.createElement('span');
+  title.className = 'month-title';
+  title.textContent = new Date(year, month - 1, 1)
+    .toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const count = document.createElement('span');
+  count.className = 'month-count';
+  count.textContent = monthCount + ' day' + (monthCount === 1 ? '' : 's') + ' this month';
+  head.append(title, count);
+  card.appendChild(head);
+
+  const grid = document.createElement('div');
+  grid.className = 'month-grid';
+  grid.setAttribute('aria-hidden', 'true');
+  const offset = (new Date(year, month - 1, 1).getDay() + 6) % 7; // Monday-first
+  for (let i = 0; i < offset; i++) grid.appendChild(document.createElement('div'));
+  const daysInMonth = new Date(year, month, 0).getDate();
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = monthKey + '-' + String(day).padStart(2, '0');
+    const recs = byDate.get(iso);
+    const sq = document.createElement('div');
+    sq.className = 'month-sq' +
+      (recs ? ' trained' : '') +
+      (day > todayDay ? ' future' : '') +
+      (iso === today ? ' today' : '');
+    if (recs) {
+      const colors = [...new Set(recs.map(r => r.type))]
+        .map(t => (DAY_META[t] || { color: 'var(--muted)' }).color);
+      sq.style.background = colors.length === 1
+        ? colors[0]
+        : 'linear-gradient(135deg, ' + colors.map((c, i) =>
+            c + ' ' + (i * 100 / colors.length) + '% ' + ((i + 1) * 100 / colors.length) + '%'
+          ).join(', ') + ')';
+    }
+    grid.appendChild(sq);
+  }
+  card.appendChild(grid);
+
+  const yearLine = document.createElement('div');
+  yearLine.className = 'year-line';
+  const num = document.createElement('span');
+  num.className = 'year-num';
+  num.textContent = yearCount;
+  const label = document.createElement('span');
+  label.textContent = 'day' + (yearCount === 1 ? '' : 's') + ' trained in ' + year;
+  yearLine.append(num, label);
+  card.appendChild(yearLine);
+
+  card.setAttribute('aria-label',
+    title.textContent + ': trained ' + monthCount + ' day' + (monthCount === 1 ? '' : 's') +
+    ' this month, ' + yearCount + ' this year. Open calendar.');
+  card.addEventListener('click', showCalendar);
+  wrap.appendChild(card);
 }
 
 function showSession() {
