@@ -967,11 +967,19 @@ function loadData() {
       if (d && typeof d === 'object' && d.customExercises && Array.isArray(d.sessions)) {
         d.settings = normalizeSettings(d.settings);
         d.syncQueue = Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [];
+        d.sessionQueue = normalizeSessionQueue(d.sessionQueue);
         return d;
       }
     }
   } catch (e) { /* fall through to fresh data */ }
-  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null), syncQueue: [] };
+  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null), syncQueue: [], sessionQueue: [] };
+}
+
+// Pending full-session pushes: [{ id, op: 'put' | 'delete' }], one entry per id.
+function normalizeSessionQueue(q) {
+  if (!Array.isArray(q)) return [];
+  return q.filter(x => x && typeof x.id === 'string' && (x.op === 'put' || x.op === 'delete'))
+    .map(x => ({ id: x.id, op: x.op }));
 }
 
 function normalizeSettings(s) {
@@ -980,7 +988,7 @@ function normalizeSettings(s) {
     timeZone: typeof s.timeZone === 'string' ? s.timeZone : null,
     unit: s.unit === 'lb' ? 'lb' : 'kg',
     restSeconds: [0, 60, 90, 120].includes(s.restSeconds) ? s.restSeconds : 90,
-    // Token for pushing gym-day counts to lokeshnanda.com (travels with backups)
+    // Token for pushing gym days and full sessions to lokeshnanda.com (travels with backups)
     syncToken: typeof s.syncToken === 'string' && s.syncToken ? s.syncToken : null,
   };
 }
@@ -1129,8 +1137,10 @@ function persistRecord(record) {
   if (idx >= 0) data.sessions[idx] = record;
   else data.sessions.push(record);
   queueGymSync(record.date);
+  queueSessionSync(record.id, 'put');
   saveData(data);
   flushGymSync(); // fire-and-forget; offline saves stay queued
+  flushSessionSync();
 }
 
 function persistSession() {
@@ -1478,7 +1488,9 @@ function renderHistoryDetail(body, rec) {
   delBtn.addEventListener('click', () => {
     if (!confirm('Delete this ' + prettyDate(rec.date) + ' session? This can’t be undone.')) return;
     data.sessions = data.sessions.filter(s => s.id !== rec.id);
+    queueSessionSync(rec.id, 'delete');
     saveData(data);
+    flushSessionSync();
     historyDetailId = null;
     renderHistory();
     toast('Session deleted');
@@ -2473,11 +2485,15 @@ $('exercises-btn').addEventListener('click', showExerciseManager);
 $('exercises-back').addEventListener('click', showHome);
 
 /* ---------------- Website sync ----------------
-   Opt-in: pushes gym DAYS (dates only — never exercises, weights or times)
-   to lokeshnanda.com/now via a token-authed Worker endpoint. Saved sessions
-   queue locally and flush whenever the app is online. */
+   Opt-in, one token, two destinations:
+   - gym DAYS (dates only) to the public consistency grid on lokeshnanda.com/now;
+   - FULL sessions (exercises, weights, times, notes) to a private, token-protected
+     endpoint that only the owner's private workout site can read.
+   Both queue locally and flush whenever the app is online. */
 
 const SYNC_URL = 'https://api.lokeshnanda.com/gym';
+const SESSIONS_URL = 'https://api.lokeshnanda.com/sessions';
+const SESSIONS_BATCH = 25; // the endpoint's per-request cap
 
 function queueGymSync(date) {
   if (!data.settings.syncToken || !date) return;
@@ -2505,28 +2521,80 @@ async function flushGymSync() {
   syncFlushing = false;
 }
 
+// Full-session queue: a later op for the same id replaces the earlier one,
+// so an edit-then-delete sends only the delete.
+function queueSessionSync(id, op) {
+  if (!data.settings.syncToken || !id) return;
+  data.sessionQueue = data.sessionQueue.filter(x => x.id !== id);
+  data.sessionQueue.push({ id, op });
+}
+
+// Queues every saved session, for the one-time history push when the token
+// is first set (or changed, in case the destination changed with it).
+function queueAllSessions() {
+  for (const s of data.sessions) queueSessionSync(s.id, 'put');
+}
+
+let sessionFlushing = false;
+async function flushSessionSync() {
+  if (sessionFlushing || !data.settings.syncToken || !data.sessionQueue.length) return;
+  sessionFlushing = true;
+  try {
+    while (data.sessionQueue.length) {
+      const batch = data.sessionQueue.slice(0, SESSIONS_BATCH);
+      // Records are built at flush time so a queued put always sends the latest edit;
+      // a put whose session has since vanished is dropped from the batch.
+      const sessions = [];
+      const deleted = [];
+      for (const item of batch) {
+        if (item.op === 'delete') { deleted.push(item.id); continue; }
+        const rec = data.sessions.find(s => s.id === item.id);
+        if (rec) sessions.push(rec);
+      }
+      if (sessions.length || deleted.length) {
+        const res = await fetch(SESSIONS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: data.settings.syncToken, sessions, deleted }),
+        });
+        if (res.status === 401) { toast('Website sync token rejected — check Website sync'); break; }
+        if (!res.ok) break; // transient, or a record the server will never accept; retry next time
+      }
+      data.sessionQueue = data.sessionQueue.slice(batch.length);
+      saveData(data);
+    }
+  } catch (e) { /* offline — queue stays, retried on next open */ }
+  sessionFlushing = false;
+}
+
 function renderSyncButton() {
   $('sync-btn').textContent = 'Website sync · ' + (data.settings.syncToken ? 'on' : 'off');
 }
 
 $('sync-btn').addEventListener('click', () => {
   const entered = prompt(
-    'Sync gym days (dates only) to lokeshnanda.com.\nPaste the sync token, or leave blank to turn off:',
+    'Sync to lokeshnanda.com: gym days to the public consistency grid, and full sessions ' +
+    '(exercises, weights, times, notes) to a private, token-protected endpoint only the ' +
+    'owner\'s private workout site can read.\nPaste the sync token, or leave blank to turn off:',
     data.settings.syncToken || ''
   );
   if (entered === null) return;
+  const previous = data.settings.syncToken;
   data.settings.syncToken = entered.trim() || null;
+  if (data.settings.syncToken && data.settings.syncToken !== previous) queueAllSessions();
   saveData(data);
   renderSyncButton();
   if (data.settings.syncToken) {
     toast('Website sync on — sessions push automatically');
     flushGymSync();
+    flushSessionSync();
   } else {
     toast('Website sync off');
   }
 });
 
 window.addEventListener('online', flushGymSync);
+window.addEventListener('online', flushSessionSync);
 
 /* ---------------- Export / import ---------------- */
 
@@ -2564,6 +2632,7 @@ $('import-file').addEventListener('change', () => {
         sessions: d.sessions,
         settings: normalizeSettings(d.settings),
         syncQueue: Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [],
+        sessionQueue: normalizeSessionQueue(d.sessionQueue),
       };
       saveData(data);
       renderDayCards();
@@ -2572,6 +2641,7 @@ $('import-file').addEventListener('change', () => {
       renderRestButton();
       renderSyncButton();
       flushGymSync();
+      flushSessionSync();
       toast('Backup imported');
     } catch (e) {
       toast('That file isn’t a Rep Log backup');
@@ -2637,6 +2707,7 @@ renderUnitButton();
 renderRestButton();
 renderSyncButton();
 flushGymSync();
+flushSessionSync();
 if (navigator.share) $('share-btn').hidden = false;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 showHome();

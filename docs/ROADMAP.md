@@ -12,6 +12,7 @@ The primary use case is feeding an AI coach: the log is pasted daily into Google
 
 - [ ] **Coach preamble**: a saved prompt automatically prepended to the copied log (for example "You are my strength coach, here is today's session, suggest next targets"), so the daily paste into Fitbit's AI coach or any chat app is one step.
 - [ ] **Multi-session export**: "Copy last N sessions / last 4 weeks" so the coach can review a training block, not just one day.
+- [x] **Session sync to workout-planner**: with the website sync token set, every saved, edited or deleted session is pushed (batched, offline-queued, with a one-time history load when the token is entered) to a private token-authed endpoint that the owner's workout-planner site pulls from for analytics and coaching.
 - [ ] **Paste plan from coach**: parse a pasted plan (the app's own format, or loose "Bench 4x8 @ 50kg" lines) and prefill the next session with target weights and reps, shown where the "was 40kg×12" hints go.
 
 ## 3. Progress insights (the data is already stored, just unused)

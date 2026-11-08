@@ -36,7 +36,7 @@ A workout logger for Push / Pull / Legs training, built to feed an LLM coach. In
 
 Everything lives in your browser's localStorage — no server, no account. **Export backup / Import backup** moves your full history, custom exercises, and settings between devices. Leave the weight blank for bodyweight exercises (logged as `BW`).
 
-**Website sync (optional).** The "Website sync" setting pushes gym *days* — dates only, never exercises, weights or times — to the consistency grid on [lokeshnanda.com/now](https://lokeshnanda.com/now/). Paste the sync token once (it travels with backups); saved sessions then push automatically, with an offline queue that retries the next time the app opens. Blank the token to turn it off.
+**Website sync (optional).** The "Website sync" setting pushes two things with one token: gym *days* (dates only) to the public consistency grid on [lokeshnanda.com/now](https://lokeshnanda.com/now/), and *full sessions* (exercises, weights, times, notes) to a private, token-protected endpoint that only the owner's private workout site can read; nothing public ever serves them. Paste the sync token once (it travels with backups); every saved session is pushed at that moment as a one-time history load, and new saves, edits and deletes push automatically after that, with an offline queue that retries the next time the app opens. Blank the token to turn both off.
 
 ## Roadmap
 
