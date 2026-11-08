@@ -2557,13 +2557,13 @@ async function flushSessionSync() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: data.settings.syncToken, sessions, deleted }),
         });
-        if (res.status === 401) { toast('Website sync token rejected — check Website sync'); break; }
+        if (res.status === 401) { toast('Website sync token rejected: check Website sync'); break; }
         if (!res.ok) break; // transient, or a record the server will never accept; retry next time
       }
       data.sessionQueue = data.sessionQueue.slice(batch.length);
       saveData(data);
     }
-  } catch (e) { /* offline — queue stays, retried on next open */ }
+  } catch (e) { /* offline: queue stays, retried on next open */ }
   sessionFlushing = false;
 }
 
