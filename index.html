@@ -165,7 +165,7 @@
     overflow-wrap: anywhere;
   }
   .tool-btn:active { background: var(--surface); }
-  #history-btn, #calendar-btn {
+  #history-btn, #calendar-btn, #insights-btn {
     color: var(--ink);
     font-weight: 600;
     font-size: 15px;
@@ -927,6 +927,41 @@
   button.week-row { width: 100%; background: none; border: none; border-bottom: 1px solid var(--line); text-align: left; }
   #weight-chart svg { display: block; width: 100%; height: auto; }
 
+  /* ---------- Insights ---------- */
+  #view-insights { --pc: var(--plate-green); }
+  .range-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .range-chip {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 14.5px;
+    padding: 9px 0;
+  }
+  .range-chip.active { background: var(--ink); border-color: var(--ink); color: #101114; font-weight: 700; }
+  .insight { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; line-height: 1.45; }
+  .insight:last-child { border-bottom: none; padding-bottom: 0; }
+  .insight .aux-label { display: block; margin-bottom: 2px; font-size: 11px; }
+  .ins-tiles { margin-bottom: 12px; }
+  .ins-tiles .streak-cell { background: var(--surface-2); padding: 10px 4px; }
+  .ins-tiles .streak-num { font-size: 26px; }
+  .ins-tiles .streak-label { display: block; font-size: 10.5px; letter-spacing: 0.06em; }
+  .tile-sub { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .chart svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+  .chart-tip { color: var(--muted); font-size: 12.5px; min-height: 19px; margin: 6px 0 0; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .chart-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .chart-legend i.line { height: 2px; width: 14px; border-radius: 1px; vertical-align: 3px; }
+  .ins-sub { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 16px 0 6px; }
+  .bar-row { padding: 6px 0; }
+  .bar-row .bar-top { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+  .bar-row .bar-name { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .bar-row .bar-val { flex: none; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .bar-track { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 5px; overflow: hidden; }
+  .bar-track div { height: 100%; border-radius: 3px; background: var(--bar, var(--pc)); }
+  .ins-note { color: var(--muted); font-size: 12.5px; margin: 8px 0 0; }
+
   button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -950,6 +985,7 @@
     <div class="home-tools">
       <button class="tool-btn" id="history-btn">History</button>
       <button class="tool-btn" id="calendar-btn">Calendar</button>
+      <button class="tool-btn" id="insights-btn">Insights</button>
     </div>
     <details class="more-tools">
       <summary>Settings &amp; data</summary>
@@ -1088,6 +1124,13 @@
     <p class="prefill-note">Your master list. Values are per serving. Editing an item never changes past days.</p>
     <button class="add-set-btn" id="inventory-add" style="margin-bottom: 14px;">+ Add item</button>
     <div id="inventory-body"></div>
+  </section>
+
+  <section id="view-insights" hidden>
+    <button class="back-btn" id="insights-back">‹ Back</button>
+    <h2 class="history-title">Insights</h2>
+    <div class="range-row" id="insight-range" role="group" aria-label="Time range"></div>
+    <div id="insights-body"></div>
   </section>
 
   <section id="view-weight" hidden>
@@ -1562,7 +1605,7 @@ function buildLogText(record) {
 const $ = id => document.getElementById(id);
 const actionBar = $('action-bar');
 const VIEWS = ['view-home', 'view-session', 'view-history', 'view-calendar', 'view-exercises',
-               'view-food', 'view-inventory', 'view-weight'];
+               'view-food', 'view-inventory', 'view-weight', 'view-insights'];
 
 function showView(id) {
   for (const v of VIEWS) $(v).hidden = v !== id;
@@ -3807,6 +3850,461 @@ $('goals-btn').addEventListener('click', () => {
   renderFoodHome();
   toast('Goals updated');
 });
+
+/* ---------------- Insights ----------------
+   A read-only dashboard over everything already stored: food days,
+   body weight and workout sessions, for the last 7, 30 or 90 days.
+   Averages cover logged days only, and every section hides or explains
+   itself when there is too little data to say anything. */
+
+let insightDays = 30;
+const KCAL_PER_KG = 7700; // rough energy in a kilogram of body weight
+
+function dayDiff(a, b) {
+  const t = iso => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  return Math.round((t(b) - t(a)) / 864e5);
+}
+
+function fmtInt(n) {
+  return Math.round(n).toLocaleString('en-IN');
+}
+
+function mean(list) {
+  return list.length ? list.reduce((a, b) => a + b, 0) / list.length : 0;
+}
+
+// Least-squares slope of [[x, y]], or null with fewer than 2 distinct x.
+function slopeOf(pts) {
+  const mx = mean(pts.map(p => p[0])), my = mean(pts.map(p => p[1]));
+  let num = 0, den = 0;
+  for (const [x, y] of pts) { num += (x - mx) * (y - my); den += (x - mx) * (x - mx); }
+  return den ? num / den : null;
+}
+
+// Everything the dashboard needs for the window of N days ending on a date.
+function insightData(days, end) {
+  const start = addDaysISO(end, -(days - 1));
+  const inRange = d => d >= start && d <= end;
+  const gymDates = new Set(data.sessions.map(s => s.date));
+
+  const food = Object.keys(data.foodDays)
+    .filter(d => inRange(d) && data.foodDays[d].items.some(i => i.done))
+    .sort()
+    .map(d => Object.assign({ date: d, gym: gymDates.has(d) }, foodTotals(data.foodDays[d])));
+
+  const weights = Object.keys(data.weights).filter(inRange).sort()
+    .map(d => ({ date: d, v: data.weights[d] }));
+  // Trend needs a few points spread over at least a week to mean anything.
+  let kgPerWeek = null;
+  if (weights.length >= 4 && dayDiff(weights[0].date, weights[weights.length - 1].date) >= 7) {
+    const s = slopeOf(weights.map(w => [dayDiff(start, w.date), w.v]));
+    if (s != null) kgPerWeek = s * 7;
+  }
+
+  const sessions = data.sessions.filter(s => inRange(s.date)).sort((a, b) => a.date.localeCompare(b.date));
+  return { start, end, days, food, weights, kgPerWeek, sessions };
+}
+
+// Best set of an exercise entry as one number: estimated 1RM (Epley) when
+// any set is weighted, else the most reps.
+function entryScore(entry) {
+  const weighted = entry.sets.filter(s => s.weight != null && s.weight > 0);
+  if (weighted.length) return { v: Math.max(...weighted.map(s => s.weight * (1 + s.reps / 30))), weighted: true };
+  return { v: Math.max(...entry.sets.map(s => s.reps)), weighted: false };
+}
+
+// Per exercise: score at its first and latest session in the window (2+ sessions).
+function strengthMovers(sessions) {
+  const by = new Map();
+  for (const s of sessions) {
+    for (const e of (s.entries || [])) {
+      if (!e.sets || !e.sets.length) continue;
+      const k = e.name.toLowerCase();
+      if (!by.has(k)) by.set(k, { name: e.name, unit: s.unit || 'kg', scores: [] });
+      by.get(k).scores.push(entryScore(e));
+    }
+  }
+  const out = [];
+  for (const x of by.values()) {
+    const first = x.scores[0], last = x.scores[x.scores.length - 1];
+    if (x.scores.length < 2 || first.weighted !== last.weighted || !first.v) continue;
+    const best = Math.max(...x.scores.slice(0, -3).map(s => s.v), -Infinity);
+    const recent = Math.max(...x.scores.slice(-3).map(s => s.v));
+    out.push({
+      name: x.name, unit: x.unit, weighted: last.weighted, n: x.scores.length,
+      first: first.v, last: last.v, pct: (last.v - first.v) / first.v * 100,
+      stalled: x.scores.length >= 5 && recent <= best,
+    });
+  }
+  return out.sort((a, b) => b.pct - a.pct);
+}
+
+function topFoods(start, end) {
+  const by = new Map();
+  for (const d of Object.keys(data.foodDays)) {
+    if (d < start || d > end) continue;
+    for (const it of data.foodDays[d].items) {
+      if (!it.done) continue;
+      const k = foodKey(it);
+      if (!by.has(k)) by.set(k, { name: it.name, kcal: 0, protein: 0, price: 0, times: 0 });
+      const x = by.get(k);
+      x.kcal += it.kcal * it.qty; x.protein += it.protein * it.qty; x.price += it.price * it.qty; x.times++;
+    }
+  }
+  return [...by.values()];
+}
+
+/* Charts: plain SVG strings. Each mark carries a data-tip that the
+   section shows under the chart on hover or tap. */
+
+function kcalChartSVG(d, goal) {
+  const W = 320, H = 132, top = 14, bottom = 18, plotH = H - top - bottom;
+  const max = Math.max(goal * 1.15, ...d.food.map(f => f.kcal));
+  const y = v => top + plotH - plotH * Math.max(0, v) / max;
+  const slot = W / d.days;
+  const bw = Math.max(1.5, slot - (d.days > 45 ? 1 : 3));
+  const byDate = new Map(d.food.map(f => [f.date, f]));
+  let bars = '', hits = '';
+  for (let i = 0; i < d.days; i++) {
+    const iso = addDaysISO(d.start, i);
+    const f = byDate.get(iso);
+    const x = i * slot + (slot - bw) / 2;
+    let tip = shortDate(iso) + ': not logged';
+    if (f) {
+      const over = Math.round(f.kcal) > goal;
+      const h = Math.max(1.5, y(0) - y(f.kcal));
+      bars += '<rect x="' + x.toFixed(1) + '" y="' + (y(0) - h).toFixed(1) + '" width="' + bw.toFixed(1) +
+        '" height="' + h.toFixed(1) + '" rx="' + Math.min(2, bw / 2).toFixed(1) + '" fill="var(--' +
+        (over ? 'plate-red' : 'plate-green') + ')"/>';
+      const diff = Math.round(f.kcal - goal);
+      tip = shortDate(iso) + ': ' + fmtInt(f.kcal) + ' kcal, ' +
+        (diff > 0 ? fmtInt(diff) + ' over' : fmtInt(-diff) + ' under') + ' · ' + fmtNum(f.protein) + 'g protein';
+    }
+    hits += '<rect x="' + (i * slot).toFixed(1) + '" y="0" width="' + slot.toFixed(1) + '" height="' + H +
+      '" fill="transparent" data-tip="' + tip + '"/>';
+  }
+  const gy = y(goal).toFixed(1);
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Calories per day against the ' + goal + ' kcal goal">' +
+    '<line x1="0" x2="' + W + '" y1="' + y(0) + '" y2="' + y(0) + '" stroke="var(--line)"/>' + bars +
+    '<line x1="0" x2="' + W + '" y1="' + gy + '" y2="' + gy + '" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3 4" opacity="0.7"/>' +
+    '<text x="' + W + '" y="' + (gy - 4) + '" fill="var(--muted)" font-size="10" text-anchor="end">goal ' + goal + '</text>' +
+    '<text x="0" y="' + (H - 4) + '" fill="var(--muted)" font-size="10">' + shortDate(d.start) + '</text>' +
+    '<text x="' + W + '" y="' + (H - 4) + '" fill="var(--muted)" font-size="10" text-anchor="end">' + shortDate(d.end) + '</text>' +
+    hits + '</svg>';
+}
+
+function weightChartSVG(d, unit) {
+  const W = 320, H = 132, top = 10, bottom = 18, left = 30, plotH = H - top - bottom, plotW = W - left - 4;
+  const vals = d.weights.map(w => w.v);
+  const lo = Math.min(...vals) - 0.3, hi = Math.max(...vals) + 0.3;
+  const x = iso => left + plotW * (d.days === 1 ? 0.5 : dayDiff(d.start, iso) / (d.days - 1));
+  const y = v => top + plotH - plotH * (v - lo) / (hi - lo);
+  // 7-day trailing average at each logged day
+  const avg = d.weights.map(w => mean(d.weights.filter(o => o.date <= w.date && dayDiff(o.date, w.date) < 7).map(o => o.v)));
+  const line = d.weights.map((w, i) => x(w.date).toFixed(1) + ',' + y(avg[i]).toFixed(1)).join(' ');
+  let dots = '', hits = '';
+  d.weights.forEach((w, i) => {
+    const cx = x(w.date);
+    dots += '<circle cx="' + cx.toFixed(1) + '" cy="' + y(w.v).toFixed(1) + '" r="2" fill="var(--muted)"/>';
+    const prev = i ? (cx + x(d.weights[i - 1].date)) / 2 : left;
+    const next = i < d.weights.length - 1 ? (cx + x(d.weights[i + 1].date)) / 2 : W;
+    hits += '<rect x="' + prev.toFixed(1) + '" y="0" width="' + (next - prev).toFixed(1) + '" height="' + H +
+      '" fill="transparent" data-tip="' + shortDate(w.date) + ': ' + fmtNum(w.v) + unit + ' · 7-day average ' + fmtNum(avg[i]) + unit + '"/>';
+  });
+  const end = d.weights[d.weights.length - 1];
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Body weight, daily entries and 7-day average">' +
+    '<line x1="' + left + '" x2="' + W + '" y1="' + y(lo + 0.3) + '" y2="' + y(lo + 0.3) + '" stroke="var(--line)"/>' +
+    '<line x1="' + left + '" x2="' + W + '" y1="' + y(hi - 0.3) + '" y2="' + y(hi - 0.3) + '" stroke="var(--line)"/>' +
+    '<text x="0" y="' + (y(hi - 0.3) + 3.5) + '" fill="var(--muted)" font-size="10">' + fmtNum(hi - 0.3) + '</text>' +
+    '<text x="0" y="' + (y(lo + 0.3) + 3.5) + '" fill="var(--muted)" font-size="10">' + fmtNum(lo + 0.3) + '</text>' +
+    dots +
+    '<polyline points="' + line + '" fill="none" stroke="var(--plate-green)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '<circle cx="' + x(end.date).toFixed(1) + '" cy="' + y(avg[avg.length - 1]).toFixed(1) + '" r="4" fill="var(--plate-green)" stroke="var(--surface)" stroke-width="2"/>' +
+    '<text x="' + left + '" y="' + (H - 4) + '" fill="var(--muted)" font-size="10">' + shortDate(d.start) + '</text>' +
+    '<text x="' + W + '" y="' + (H - 4) + '" fill="var(--muted)" font-size="10" text-anchor="end">' + shortDate(d.end) + '</text>' +
+    hits + '</svg>';
+}
+
+function showInsights() {
+  renderInsights();
+  showView('view-insights');
+}
+
+function renderInsights() {
+  const unit = data.settings.unit;
+  const kcalGoal = data.settings.kcalGoal, proteinGoal = data.settings.proteinGoal;
+  const today = todayISO();
+  const d = insightData(insightDays, today);
+  const prev = insightData(insightDays, addDaysISO(d.start, -1)); // the window before, for comparisons
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+
+  const range = $('insight-range');
+  range.innerHTML = '';
+  for (const n of [7, 30, 90]) {
+    const b = el('button', 'range-chip' + (n === insightDays ? ' active' : ''), n + ' days');
+    b.setAttribute('aria-pressed', String(n === insightDays));
+    b.addEventListener('click', () => { insightDays = n; renderInsights(); });
+    range.appendChild(b);
+  }
+
+  const body = $('insights-body');
+  body.innerHTML = '';
+  const section = title => {
+    const card = el('div', 'aux-card');
+    const head = el('div', 'aux-head');
+    head.appendChild(el('span', 'aux-title', title));
+    card.appendChild(head);
+    body.appendChild(card);
+    return card;
+  };
+  const tiles = (card, list) => {
+    const row = el('div', 'streak-row ins-tiles');
+    for (const [num, label, sub] of list) {
+      const c = el('div', 'streak-cell');
+      c.append(el('span', 'streak-num', num), el('span', 'streak-label', label));
+      if (sub) c.appendChild(el('span', 'tile-sub', sub));
+      row.appendChild(c);
+    }
+    card.appendChild(row);
+  };
+  const chart = (card, svg, hint) => {
+    const wrap = el('div', 'chart');
+    wrap.innerHTML = svg;
+    const tip = el('p', 'chart-tip', hint);
+    const show = e => { const t = e.target.getAttribute && e.target.getAttribute('data-tip'); if (t) tip.textContent = t; };
+    wrap.addEventListener('pointerover', show);
+    wrap.addEventListener('pointerdown', show);
+    card.append(wrap, tip);
+  };
+  const barRow = (card, name, value, share, color) => {
+    const row = el('div', 'bar-row');
+    const top = el('div', 'bar-top');
+    top.append(el('span', 'bar-name', name), el('span', 'bar-val', value));
+    const track = el('div', 'bar-track');
+    const fill = el('div');
+    fill.style.width = Math.max(2, Math.min(100, share * 100)) + '%';
+    if (color) fill.style.setProperty('--bar', color);
+    track.appendChild(fill);
+    row.append(top, track);
+    card.appendChild(row);
+  };
+  const vs = (now, before) => {
+    const diff = Math.round(now - before);
+    return (diff > 0 ? '+' : '') + fmtInt(diff) + ' vs prior ' + insightDays + 'd';
+  };
+
+  /* ---- numbers ---- */
+  const avgKcal = mean(d.food.map(f => f.kcal));
+  const avgProtein = mean(d.food.map(f => f.protein));
+  const avgCost = mean(d.food.map(f => f.price));
+  const metDays = d.food.filter(f => Math.round(f.kcal) <= kcalGoal).length;
+  const proteinDays = d.food.filter(f => f.protein >= proteinGoal).length;
+  const weeks = d.days / 7;
+  const movers = strengthMovers(d.sessions);
+
+  /* ---- highlights: plain-language findings, most useful first ---- */
+  const notes = [];
+  const say = (tag, text) => notes.push([tag, text]);
+
+  if (d.kgPerWeek != null) {
+    const pace = Math.abs(d.kgPerWeek);
+    const latest = d.weights[d.weights.length - 1].v;
+    if (pace < 0.05) say('Weight', 'Your weight is holding steady over these ' + d.days + ' days.');
+    else {
+      let t = 'Your weight is trending ' + (d.kgPerWeek < 0 ? 'down' : 'up') + ' about ' + fmtNum(pace) + unit + ' a week.';
+      if (d.kgPerWeek < 0 && pace > latest * 0.01) {
+        t += ' That is faster than 1% of your body weight a week, a pace often linked with losing muscle along with fat.';
+      }
+      say('Weight', t);
+    }
+    // Maintenance: intake minus the energy implied by the weight change.
+    if (unit === 'kg' && d.food.length >= 10 && d.days >= 14) {
+      const tdee = avgKcal - d.kgPerWeek * KCAL_PER_KG / 7;
+      say('Energy', 'Eating about ' + fmtInt(avgKcal) + ' kcal a day while your weight moves ' + fmtChange(d.kgPerWeek) +
+        'kg a week puts your maintenance near ' + fmtInt(Math.round(tdee / 10) * 10) +
+        ' kcal. This is a rough estimate that assumes your logged days are complete.');
+    }
+  }
+
+  if (d.food.length >= 3) {
+    say('Calories', 'You met your ' + kcalGoal + ' kcal goal on ' + metDays + ' of ' + d.food.length +
+      ' logged days, averaging ' + fmtInt(avgKcal) + ' kcal.');
+
+    // Hardest weekday: most often over goal, with at least two logged days.
+    const dow = Array.from({ length: 7 }, () => ({ n: 0, over: 0 }));
+    for (const f of d.food) {
+      const [y, m, day] = f.date.split('-').map(Number);
+      const x = dow[new Date(y, m - 1, day).getDay()];
+      x.n++;
+      if (Math.round(f.kcal) > kcalGoal) x.over++;
+    }
+    const names = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+    let worst = -1;
+    dow.forEach((x, i) => {
+      if (x.n >= 2 && x.over / x.n >= 0.5 && (worst < 0 || x.over / x.n > dow[worst].over / dow[worst].n)) worst = i;
+    });
+    const overAll = (d.food.length - metDays) / d.food.length;
+    if (worst >= 0 && dow[worst].over / dow[worst].n > overAll + 0.15) {
+      say('Pattern', names[worst] + ' are your hardest day: over goal on ' + dow[worst].over + ' of ' + dow[worst].n + '.');
+    }
+
+    const short = proteinGoal - avgProtein;
+    if (short > 3) {
+      let t = 'Protein averages ' + Math.round(avgProtein) + 'g, about ' + Math.round(short) + 'g under your ' + proteinGoal +
+        'g goal (met on ' + proteinDays + ' of ' + d.food.length + ' days).';
+      const dense = data.foods.filter(f => f.protein >= 10 && f.kcal > 0).sort((a, b) => b.protein / b.kcal - a.protein / a.kcal)[0];
+      if (dense) {
+        t += ' One more serving of ' + dense.name + ' adds ' + fmtNum(dense.protein) + 'g for ' + Math.round(dense.kcal) + ' kcal.';
+      }
+      say('Protein', t);
+    } else {
+      say('Protein', 'Protein averages ' + Math.round(avgProtein) + 'g against a ' + proteinGoal + 'g goal, met on ' +
+        proteinDays + ' of ' + d.food.length + ' days.');
+    }
+
+    const gym = d.food.filter(f => f.gym), rest = d.food.filter(f => !f.gym);
+    if (gym.length >= 3 && rest.length >= 3) {
+      const diff = mean(gym.map(f => f.kcal)) - mean(rest.map(f => f.kcal));
+      if (Math.abs(diff) >= 75) {
+        say('Pattern', 'You eat about ' + fmtInt(Math.abs(diff)) + ' kcal ' + (diff > 0 ? 'more' : 'less') +
+          ' on training days (' + fmtInt(mean(gym.map(f => f.kcal))) + ') than on rest days (' + fmtInt(mean(rest.map(f => f.kcal))) + ').');
+      }
+    }
+  }
+
+  if (d.sessions.length) {
+    const counts = { push: 0, pull: 0, legs: 0 };
+    for (const s of d.sessions) if (counts[s.type] != null) counts[s.type]++;
+    const order = Object.keys(counts).sort((a, b) => counts[a] - counts[b]);
+    const low = order[0], high = order[2];
+    if (d.sessions.length >= 6 && counts[high] - counts[low] >= 2) {
+      say('Training', DAY_META[low].label + ' is behind: ' + counts[low] + ' session' + (counts[low] === 1 ? '' : 's') +
+        ' against ' + counts[high] + ' for ' + DAY_META[high].label + '.');
+    }
+    const up = movers.find(m => m.pct >= 2);
+    if (up) {
+      say('Strength', up.name + ' is your biggest mover: ' + (up.weighted ? 'estimated 1RM ' : 'best set ') +
+        fmtNum(up.first) + ' to ' + fmtNum(up.last) + (up.weighted ? up.unit : ' reps') + ' (' + fmtChange(up.pct) + '%).');
+    }
+    const stalled = movers.filter(m => m.stalled).map(m => m.name);
+    if (stalled.length) {
+      say('Strength', (stalled.length === 1 ? stalled[0] + ' has' : stalled.slice(0, 3).join(', ') + ' have') +
+        ' not improved in the last 3 sessions. A change in reps, load or exercise order may help.');
+    }
+  }
+
+  if (d.food.length >= 3 && avgCost > 0) {
+    say('Cost', 'Food costs about ₹' + fmtInt(avgCost) + ' a logged day, roughly ₹' + fmtInt(avgCost * 30) + ' a month at this rate.');
+  }
+  if (d.food.length && d.food.length < d.days * 0.7) {
+    say('Logging', 'Food is logged on ' + d.food.length + ' of ' + d.days + ' days, so the averages only describe those days.');
+  }
+
+  const hi = section('Highlights');
+  if (!notes.length) {
+    hi.appendChild(el('p', 'ins-note', 'Not enough data in this range yet. Log food, weight and workouts for a few days and findings will show up here.'));
+  }
+  for (const [tag, text] of notes) {
+    const row = el('div', 'insight');
+    row.append(el('span', 'aux-label', tag), document.createTextNode(text));
+    hi.appendChild(row);
+  }
+
+  /* ---- food ---- */
+  const food = section('Food');
+  if (!d.food.length) {
+    food.appendChild(el('p', 'ins-note', 'No food logged in this range.'));
+  } else {
+    const prevKcal = prev.food.length >= 3 ? vs(avgKcal, mean(prev.food.map(f => f.kcal))) : null;
+    tiles(food, [
+      [fmtInt(avgKcal), 'Avg kcal', prevKcal],
+      [metDays + '/' + d.food.length, 'Goal met', Math.round(metDays / d.food.length * 100) + '% of logged days'],
+      [Math.round(avgProtein) + 'g', 'Avg protein', proteinDays + '/' + d.food.length + ' days met'],
+    ]);
+    chart(food, kcalChartSVG(d, kcalGoal), 'Tap a bar for that day.');
+    const legend = el('div', 'chart-legend');
+    legend.innerHTML = '<span><i style="background:var(--plate-green)"></i>At or under goal</span>' +
+      '<span><i style="background:var(--plate-red)"></i>Over goal</span>';
+    food.appendChild(legend);
+
+    const foods = topFoods(d.start, d.end);
+    const totalKcal = foods.reduce((a, f) => a + f.kcal, 0);
+    const totalCost = foods.reduce((a, f) => a + f.price, 0);
+    const byKcal = foods.filter(f => f.kcal > 0).sort((a, b) => b.kcal - a.kcal).slice(0, 5);
+    if (byKcal.length && totalKcal > 0) {
+      food.appendChild(el('div', 'ins-sub', 'Where the calories come from'));
+      for (const f of byKcal) {
+        barRow(food, f.name, f.times + '× · ' + fmtInt(f.kcal) + ' kcal · ' + Math.round(f.kcal / totalKcal * 100) + '%', f.kcal / byKcal[0].kcal);
+      }
+    }
+    const byCost = foods.filter(f => f.price > 0).sort((a, b) => b.price - a.price).slice(0, 3);
+    if (byCost.length && totalCost > 0) {
+      food.appendChild(el('div', 'ins-sub', 'Where the money goes'));
+      for (const f of byCost) {
+        barRow(food, f.name, '₹' + fmtInt(f.price) + ' · ' + Math.round(f.price / totalCost * 100) + '%', f.price / byCost[0].price);
+      }
+      food.appendChild(el('p', 'ins-note', 'Total ₹' + fmtInt(totalCost) + ' over ' + d.food.length + ' logged days, ₹' + fmtInt(avgCost) + ' a day.'));
+    }
+  }
+
+  /* ---- weight ---- */
+  const weight = section('Weight');
+  if (d.weights.length < 2) {
+    weight.appendChild(el('p', 'ins-note', d.weights.length ? 'One entry in this range. Log a few more days to see a trend.' : 'No weight logged in this range.'));
+  } else {
+    const last7 = d.weights.filter(w => dayDiff(w.date, today) < 7).map(w => w.v);
+    const first = d.weights[0], last = d.weights[d.weights.length - 1];
+    tiles(weight, [
+      [fmtNum(last7.length ? mean(last7) : last.v), last7.length ? '7-day avg, ' + unit : 'Latest, ' + unit],
+      [fmtChange(last.v - first.v), 'Change', shortDate(first.date) + ' to ' + shortDate(last.date)],
+      [d.kgPerWeek == null ? '·' : fmtChange(d.kgPerWeek), 'Per week', d.kgPerWeek == null ? 'needs a week of entries' : 'trend line'],
+    ]);
+    chart(weight, weightChartSVG(d, unit), 'Tap the chart for a day.');
+    const legend = el('div', 'chart-legend');
+    legend.innerHTML = '<span><i style="background:var(--muted);border-radius:50%;width:6px;height:6px;vertical-align:1px"></i>Daily entry</span>' +
+      '<span><i class="line" style="background:var(--plate-green)"></i>7-day average</span>';
+    weight.appendChild(legend);
+  }
+
+  /* ---- training ---- */
+  const train = section('Training');
+  if (!d.sessions.length) {
+    train.appendChild(el('p', 'ins-note', 'No workouts saved in this range.'));
+  } else {
+    const days = new Set(d.sessions.map(s => s.date)).size;
+    const mins = d.sessions.filter(s => s.clockIn && s.clockOut).map(s => gymMinutes(s.clockIn, s.clockOut));
+    const sets = d.sessions.reduce((a, s) => a + (s.entries || []).reduce((b, e) => b + e.sets.length, 0), 0);
+    tiles(train, [
+      [String(d.sessions.length), 'Sessions', prev.sessions.length ? vs(d.sessions.length, prev.sessions.length) : days + ' days trained'],
+      [fmtNum(d.sessions.length / weeks), 'Per week'],
+      [mins.length ? fmtDuration(Math.round(mean(mins))) : '·', 'Avg time', fmtInt(sets) + ' sets total'],
+    ]);
+    train.appendChild(el('div', 'ins-sub', 'Split balance'));
+    const counts = { push: 0, pull: 0, legs: 0 };
+    for (const s of d.sessions) if (counts[s.type] != null) counts[s.type]++;
+    const most = Math.max(1, ...Object.values(counts));
+    for (const type of ['push', 'pull', 'legs']) {
+      barRow(train, DAY_META[type].label, counts[type] + (counts[type] === 1 ? ' session' : ' sessions'), counts[type] / most, DAY_META[type].color);
+    }
+    if (movers.length) {
+      train.appendChild(el('div', 'ins-sub', 'Strength, first to latest session'));
+      const scale = Math.max(5, ...movers.map(m => Math.abs(m.pct)));
+      for (const m of movers.slice(0, 6)) {
+        barRow(train, m.name, fmtNum(m.first) + ' to ' + fmtNum(m.last) + (m.weighted ? m.unit : ' reps') + ' · ' + fmtChange(m.pct) + '%',
+          Math.abs(m.pct) / scale, m.pct < 0 ? 'var(--plate-red)' : null);
+      }
+      train.appendChild(el('p', 'ins-note', 'Weighted lifts compare estimated 1RM (weight × (1 + reps ÷ 30)); bodyweight moves compare best reps.'));
+    }
+  }
+}
+
+$('insights-btn').addEventListener('click', showInsights);
+$('insights-back').addEventListener('click', showHome);
 
 /* ---------------- Install prompt ---------------- */
 

@@ -37,6 +37,17 @@ The **Food** card on the home screen opens today's food log, modeled on a simple
 
 Food and weight stay on the device (and in backups); website sync does not send them.
 
+## Insights
+
+The **Insights** button on the home screen opens a dashboard over the last 7, 30 or 90 days, built from the food, weight and workout data already on the device.
+
+- **Highlights**: plain-language findings, for example your weight trend per week, an estimated maintenance calorie level (average intake adjusted by the weight trend), how often you met your goals, your hardest weekday, training-day versus rest-day intake, a lagging split, your biggest strength mover, stalled lifts, and food cost.
+- **Food**: average calories and protein, goal-met rate, a calories-per-day chart against the goal, and where the calories and the money go.
+- **Weight**: 7-day average, change over the range, rate per week, and a chart of daily entries with a 7-day average line.
+- **Training**: sessions, sessions per week, average time, split balance, and per-exercise change in estimated 1RM.
+
+Averages cover logged days only, and findings appear only when there is enough data to support them.
+
 ## Settings (home screen)
 
 - **Food goals**: daily calorie and protein targets (default 1800 kcal, 110g).

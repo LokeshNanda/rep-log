@@ -20,6 +20,7 @@ The primary use case is feeding an AI coach: the log is pasted daily into Google
 - [x] **Per-exercise progress**: tapping an exercise name in a session opens its history: best set, a top-set trend sparkline (weight, or reps for pure bodyweight exercises), and the last 15 sessions.
 - [ ] **PR detection**: on save, compare against history and toast "New PR: Bench Press 50kg×10".
 - [x] **Consistency calendar**: a Calendar view with a month grid of gym days (color-dotted by day type), current streak, best streak, and days trained this month. Tapping a marked day opens that session.
+- [x] **Insights dashboard**: a 7 / 30 / 90 day view combining food, weight and training, with plain-language highlights (weight trend, estimated maintenance calories, goal adherence, weekday patterns, split balance, strength movers and stalls, cost) and charts.
 - [ ] **Session summary on save**: total volume, total sets, duration versus your average.
 
 ## 4. In-gym quality of life
