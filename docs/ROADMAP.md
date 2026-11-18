@@ -33,7 +33,10 @@ The primary use case is feeding an AI coach: the log is pasted daily into Google
 ## 5. Broader appeal (larger changes, later)
 
 - [ ] **Custom splits**: Push / Pull / Legs is hardcoded (`SEED`, `DAY_META`); user-defined day types (Upper / Lower, Full Body, Arms) widen the audience but touch the data model.
-- [ ] **Body weight tracking**: one number per day, included in the coach export.
+- [x] **Body weight tracking**: one number per day from the home screen, a weekly-average view with week-over-week change, included in the food coach export.
+- [x] **Food log**: an inventory of regular items (calories, protein, price), a daily log prefilled from what you usually eat and ticked off as you go, totals against calorie and protein goals, and a "Copy for LLM" export.
+- [ ] **Recipes**: build an inventory item from ingredients (for example an omelette from eggs and oil) so its totals are calculated.
+- [ ] **Gym-day and rest-day prefills**: prefill the food log differently depending on whether a session is logged that day.
 - [ ] **CSV export** alongside the JSON backup.
 
 ## Known fixes

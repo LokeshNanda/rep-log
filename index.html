@@ -152,7 +152,7 @@
   }
 
   .home-tools { display: flex; gap: 10px; margin-top: 10px; }
-  #day-cards + .home-tools { margin-top: 26px; }
+  #food-home + .home-tools { margin-top: 26px; }
   .tool-btn {
     flex: 1;
     min-width: 0;
@@ -771,6 +771,146 @@
   .progress-date { color: var(--muted); flex: none; width: 96px; }
   .progress-sets { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
+  /* ---------- Food log, inventory, weight ---------- */
+  :root { --plate-green: #3fae6a; } /* 10 kg plate: Food */
+  #food-home, #view-food, #view-inventory, #view-weight, #food-modal { --pc: var(--plate-green); }
+  .food-nav { margin-left: auto; display: flex; gap: 8px; align-self: center; }
+  .food-nav button {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 18px;
+    padding: 4px 14px;
+  }
+  .food-nav button:disabled { opacity: 0.3; }
+  .food-big { display: flex; align-items: baseline; gap: 8px; }
+  .food-kcal {
+    font-family: var(--display);
+    font-weight: 700; font-size: 40px;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .food-goal { color: var(--muted); font-size: 15px; }
+  .food-left { margin-left: auto; font-weight: 600; font-size: 15px; }
+  .food-left.over { color: var(--plate-red); }
+  .food-bar {
+    height: 6px; border-radius: 3px;
+    background: var(--surface-2);
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .food-bar div { height: 100%; background: var(--pc); border-radius: 3px; }
+  .food-bar.over div { background: var(--plate-red); }
+  .food-sub { color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+  .food-sub strong { color: var(--ink); font-weight: 600; }
+  .food-sub .met { color: var(--pc); }
+  .food-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .food-row.done .set-tick {
+    background: var(--pc);
+    border-color: var(--pc);
+    color: #101114;
+  }
+  .food-main {
+    flex: 1; min-width: 0;
+    background: none; border: none;
+    text-align: left;
+    padding: 2px 0;
+  }
+  .food-name { display: block; font-size: 15.5px; overflow-wrap: anywhere; }
+  .food-meta { display: block; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+  .food-row:not(.done) .food-name { color: var(--muted); }
+  .qty { flex: none; display: flex; align-items: center; }
+  .qty button {
+    width: 32px; height: 36px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 17px; line-height: 1;
+    padding: 0;
+  }
+  .qty span { min-width: 30px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .goal-grid {
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    grid-template-rows: repeat(7, auto);
+    grid-auto-flow: column;
+    gap: 3px;
+    margin: 4px 0 10px;
+  }
+  .goal-sq { aspect-ratio: 1; border-radius: 3px; background: var(--surface-2); }
+  .goal-sq.met { background: var(--pc); }
+  .goal-sq.over { background: var(--plate-red); }
+  .goal-sq.future { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+  .goal-sq.shown { outline: 1.5px solid var(--ink); outline-offset: 1px; }
+  .goal-sq[data-iso] { cursor: pointer; }
+  .goal-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--muted); font-size: 12.5px; }
+  .goal-legend .goal-sq { display: inline-block; width: 11px; vertical-align: -1px; margin-right: 5px; }
+  .suggestions .sug-meta { color: var(--muted); font-size: 12.5px; float: right; margin-left: 10px; }
+  .weight-row { display: flex; align-items: center; gap: 10px; }
+  .weight-row .aux-label { flex: 1; min-width: 0; }
+  .weight-row input {
+    width: 84px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 17px;
+    padding: 9px 8px;
+    text-align: center;
+  }
+  .weight-row input:focus { outline: 2px solid var(--pc); outline-offset: -1px; border-color: transparent; }
+  .weight-unit { color: var(--muted); font-size: 14px; }
+  .weight-link {
+    flex: none;
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 14px;
+    padding: 9px 12px;
+  }
+  .inv-row {
+    display: block; width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    text-align: left;
+  }
+  .inv-row:active { background: var(--surface-2); }
+  .fm-field { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12.5px; min-width: 0; }
+  .fm-field input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 16px;
+    padding: 10px;
+  }
+  .fm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .fm-check { display: flex; align-items: center; gap: 10px; font-size: 14.5px; padding: 4px 0; }
+  .fm-check[hidden] { display: none; }
+  .fm-check input { width: 20px; height: 20px; accent-color: var(--pc); }
+  .week-row { display: flex; gap: 10px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .week-row:last-child { border-bottom: none; }
+  .week-row .w-date { color: var(--muted); flex: 1; min-width: 0; }
+  .week-row .w-val { font-weight: 600; width: 76px; text-align: right; font-variant-numeric: tabular-nums; }
+  .week-row .w-chg { color: var(--muted); width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+  .week-row .w-n { color: var(--muted); width: 58px; text-align: right; font-size: 12.5px; }
+  button.week-row { width: 100%; background: none; border: none; border-bottom: 1px solid var(--line); text-align: left; }
+  #weight-chart svg { display: block; width: 100%; height: auto; }
+
   button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -790,6 +930,7 @@
     </div>
     <div id="home-stats"></div>
     <div id="day-cards"></div>
+    <div id="food-home"></div>
     <div class="home-tools">
       <button class="tool-btn" id="history-btn">History</button>
       <button class="tool-btn" id="calendar-btn">Calendar</button>
@@ -810,6 +951,7 @@
         <input type="file" id="import-file" accept="application/json,.json" hidden>
       </div>
       <div class="home-tools">
+        <button class="tool-btn" id="goals-btn">Food goals</button>
         <button class="tool-btn" id="sync-btn">Website sync</button>
       </div>
     </details>
@@ -897,6 +1039,49 @@
     <div id="exercises-body"></div>
   </section>
 
+  <section id="view-food" hidden>
+    <button class="back-btn" id="food-back">‹ Back</button>
+    <div class="session-head">
+      <h2>Food</h2>
+      <span class="session-date" id="food-date"></span>
+      <span class="food-nav">
+        <button id="food-prev" aria-label="Previous day">‹</button>
+        <button id="food-next" aria-label="Next day">›</button>
+      </span>
+    </div>
+    <p class="prefill-note" id="food-note"></p>
+    <div class="aux-card" id="food-summary"></div>
+    <div id="food-weight"></div>
+    <div id="food-list"></div>
+    <div class="add-exercise" id="food-add-wrap">
+      <input type="text" id="food-add" placeholder="Add item: search inventory or type a new one"
+             autocomplete="off" aria-label="Add food item">
+      <div class="suggestions" id="food-suggestions" hidden></div>
+    </div>
+    <div class="history-actions" style="margin-top: 18px;">
+      <button id="food-copy">Copy for LLM</button>
+      <button id="food-share" hidden>Share</button>
+      <button id="food-inventory">Inventory</button>
+    </div>
+    <div class="aux-card" id="food-graph" style="margin-top: 14px;"></div>
+  </section>
+
+  <section id="view-inventory" hidden>
+    <button class="back-btn" id="inventory-back">‹ Back</button>
+    <h2 class="history-title">Inventory</h2>
+    <p class="prefill-note">Your master list. Values are per serving. Editing an item never changes past days.</p>
+    <button class="add-set-btn" id="inventory-add" style="margin-bottom: 14px;">+ Add item</button>
+    <div id="inventory-body"></div>
+  </section>
+
+  <section id="view-weight" hidden>
+    <button class="back-btn" id="weight-back">‹ Back</button>
+    <h2 class="history-title">Weight</h2>
+    <div class="streak-row" id="weight-stats"></div>
+    <div id="weight-chart"></div>
+    <div id="weight-body"></div>
+  </section>
+
 </div>
 
 <div class="action-bar" id="action-bar">
@@ -937,6 +1122,37 @@
   </div>
 </div>
 
+<div class="progress-modal" id="food-modal" hidden>
+  <div class="progress-panel">
+    <div class="progress-head">
+      <span class="progress-title" id="fm-title"></span>
+      <button class="icon-btn" id="fm-close" aria-label="Close">✕</button>
+    </div>
+    <label class="fm-field">Name
+      <input type="text" id="fm-name" autocomplete="off">
+    </label>
+    <div class="fm-grid">
+      <label class="fm-field">Calories
+        <input type="text" id="fm-kcal" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="fm-field">Protein (g)
+        <input type="text" id="fm-protein" inputmode="decimal" autocomplete="off">
+      </label>
+      <label class="fm-field">Price (₹)
+        <input type="text" id="fm-price" inputmode="decimal" autocomplete="off">
+      </label>
+    </div>
+    <p class="progress-best">Values are for one serving.</p>
+    <label class="fm-check" id="fm-check-wrap" hidden>
+      <input type="checkbox" id="fm-check"><span id="fm-check-label"></span>
+    </label>
+    <div class="history-actions">
+      <button class="danger" id="fm-danger" hidden></button>
+      <button id="fm-save">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -959,6 +1175,79 @@ const DAY_META = {
   legs: { label: 'Legs', color: 'var(--plate-yellow)' },
 };
 
+// Starter food inventory: the owner's regular meals as [id, name, kcal, protein g, price INR].
+// Values are per-serving estimates, meant to be corrected on the Inventory screen.
+const SEED_FOODS = [
+  ['seed-banana', 'Robusta banana', 90, 1, 6],
+  ['seed-creatine', 'Creatine monohydrate 3g', 0, 0, 5],
+  ['seed-slim-milk', 'Akshayakalpa slim milk 500ml', 190, 17, 45],
+  ['seed-whey', 'Whey protein 1 scoop', 120, 24, 75],
+  ['seed-dal', 'Dal 1 katori', 150, 8, 15],
+  ['seed-rice', 'Boiled white rice 100g', 130, 2.7, 6],
+  ['seed-sabzi', 'Sabzi 1 katori (lunch)', 100, 3, 20],
+  ['seed-omelette', '3 egg omelette', 270, 19, 25],
+  ['seed-chicken', 'Boiled chicken 100g', 165, 31, 45],
+  ['seed-chapati', 'Whole wheat chapati x2', 200, 6, 10],
+  ['seed-veg', 'Veg 1 katori (dinner)', 100, 3, 20],
+];
+
+function finiteOr(v, fallback) {
+  v = Number(v);
+  return Number.isFinite(v) ? v : fallback;
+}
+
+function newFoodId() {
+  return 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// Inventory (master list): [{ id, name, kcal, protein, price }], values per serving.
+// A missing list (first run, or a backup from before food tracking) gets the starter set.
+function normalizeFoods(list) {
+  if (!Array.isArray(list)) {
+    return SEED_FOODS.map(([id, name, kcal, protein, price]) => ({ id, name, kcal, protein, price }));
+  }
+  return list.filter(f => f && typeof f.name === 'string' && f.name.trim()).map(f => ({
+    id: typeof f.id === 'string' && f.id ? f.id : newFoodId(),
+    name: f.name.trim(),
+    kcal: finiteOr(f.kcal, 0),
+    protein: finiteOr(f.protein, 0),
+    price: finiteOr(f.price, 0),
+  }));
+}
+
+// Daily food logs: { 'YYYY-MM-DD': { items: [{ foodId, name, kcal, protein, price, qty, done }] } }.
+// Each item carries its own copy of the numbers, so editing the inventory never rewrites past days.
+function normalizeFoodDays(o) {
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  for (const iso of Object.keys(o)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !o[iso] || !Array.isArray(o[iso].items)) continue;
+    out[iso] = {
+      items: o[iso].items.filter(i => i && typeof i.name === 'string' && i.name.trim()).map(i => ({
+        foodId: typeof i.foodId === 'string' ? i.foodId : null,
+        name: i.name.trim(),
+        kcal: finiteOr(i.kcal, 0),
+        protein: finiteOr(i.protein, 0),
+        price: finiteOr(i.price, 0),
+        qty: finiteOr(i.qty, 1) > 0 ? finiteOr(i.qty, 1) : 1,
+        done: !!i.done,
+      })),
+    };
+  }
+  return out;
+}
+
+// Body weight: { 'YYYY-MM-DD': number }, one entry per day, in the unit setting.
+function normalizeWeights(o) {
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  for (const iso of Object.keys(o)) {
+    const v = Number(o[iso]);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso) && Number.isFinite(v) && v > 0) out[iso] = v;
+  }
+  return out;
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -968,11 +1257,18 @@ function loadData() {
         d.settings = normalizeSettings(d.settings);
         d.syncQueue = Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [];
         d.sessionQueue = normalizeSessionQueue(d.sessionQueue);
+        d.foods = normalizeFoods(d.foods);
+        d.foodDays = normalizeFoodDays(d.foodDays);
+        d.weights = normalizeWeights(d.weights);
         return d;
       }
     }
   } catch (e) { /* fall through to fresh data */ }
-  return { customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null), syncQueue: [], sessionQueue: [] };
+  return {
+    customExercises: { push: [], pull: [], legs: [] }, sessions: [], settings: normalizeSettings(null),
+    syncQueue: [], sessionQueue: [],
+    foods: normalizeFoods(null), foodDays: {}, weights: {},
+  };
 }
 
 // Pending full-session pushes: [{ id, op: 'put' | 'delete' }], one entry per id.
@@ -990,6 +1286,9 @@ function normalizeSettings(s) {
     restSeconds: [0, 60, 90, 120].includes(s.restSeconds) ? s.restSeconds : 90,
     // Token for pushing gym days and full sessions to lokeshnanda.com (travels with backups)
     syncToken: typeof s.syncToken === 'string' && s.syncToken ? s.syncToken : null,
+    // Daily food targets
+    kcalGoal: finiteOr(s.kcalGoal, 0) > 0 ? finiteOr(s.kcalGoal, 0) : 1800,
+    proteinGoal: finiteOr(s.proteinGoal, 0) > 0 ? finiteOr(s.proteinGoal, 0) : 110,
   };
 }
 
@@ -1246,7 +1545,8 @@ function buildLogText(record) {
 
 const $ = id => document.getElementById(id);
 const actionBar = $('action-bar');
-const VIEWS = ['view-home', 'view-session', 'view-history', 'view-calendar', 'view-exercises'];
+const VIEWS = ['view-home', 'view-session', 'view-history', 'view-calendar', 'view-exercises',
+               'view-food', 'view-inventory', 'view-weight'];
 
 function showView(id) {
   for (const v of VIEWS) $(v).hidden = v !== id;
@@ -1312,6 +1612,7 @@ function renderDayCards() {
     wrap.appendChild(btn);
   }
   renderHomeStats();
+  renderFoodHome();
 }
 
 /* ---------------- Home stats: compact month heatmap + year count ----------------
@@ -2064,7 +2365,7 @@ function fmtSet(s, unit) {
   return (s.weight != null ? s.weight + unit : 'BW') + '×' + s.reps;
 }
 
-function sparklineSVG(values, unitLabel) {
+function sparklineSVG(values, unitLabel, what = 'Top set trend') {
   const W = 300, H = 76, P = 10;
   const min = Math.min(...values), max = Math.max(...values);
   const span = max - min || 1;
@@ -2073,7 +2374,7 @@ function sparklineSVG(values, unitLabel) {
   const label = v => v + (unitLabel === 'reps' ? ' reps' : unitLabel);
   const pts = values.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
   const last = values.length - 1;
-  return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" role="img" aria-label="Top set trend from ' +
+  return '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" role="img" aria-label="' + what + ' from ' +
     label(min) + ' to ' + label(max) + '">' +
     '<polyline points="' + pts + '" fill="none" stroke="var(--pc, var(--ink))" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
     values.map((v, i) =>
@@ -2633,9 +2934,13 @@ $('import-file').addEventListener('change', () => {
         settings: normalizeSettings(d.settings),
         syncQueue: Array.isArray(d.syncQueue) ? d.syncQueue.filter(x => typeof x === 'string') : [],
         sessionQueue: normalizeSessionQueue(d.sessionQueue),
+        foods: normalizeFoods(d.foods),
+        foodDays: normalizeFoodDays(d.foodDays),
+        weights: normalizeWeights(d.weights),
       };
       saveData(data);
       renderDayCards();
+      renderGoalsButton();
       renderTzButton();
       renderUnitButton();
       renderRestButton();
@@ -2650,6 +2955,809 @@ $('import-file').addEventListener('change', () => {
     }
   };
   reader.readAsText(file);
+});
+
+/* ---------------- Food log ----------------
+   A day is a list of items, each ticked when eaten. A day that has no
+   record yet opens prefilled (unticked) with the usual items: anything
+   eaten on at least 3 of the last 7 logged days. Nothing is stored until
+   the first change, so just looking at a day never creates a record. */
+
+let foodDate = null;   // ISO date shown in the food view
+let foodDay = null;    // working copy: the stored day, or an unsaved prefill
+let foodSource = '';   // where an unsaved prefill came from, for the note
+let subReturn = null;  // where Back goes from the inventory and weight views
+
+function fmtNum(n) {
+  return String(Math.round(n * 10) / 10);
+}
+
+function fmtFoodMeta(kcal, protein, price) {
+  return Math.round(kcal) + ' kcal · ' + fmtNum(protein) + 'g · ₹' + fmtNum(price);
+}
+
+function foodKey(it) {
+  return it.foodId || 'n:' + it.name.toLowerCase();
+}
+
+function foodTotals(day) {
+  const t = { kcal: 0, protein: 0, price: 0, planned: 0, done: 0 };
+  for (const it of (day ? day.items : [])) {
+    if (it.done) {
+      t.kcal += it.kcal * it.qty;
+      t.protein += it.protein * it.qty;
+      t.price += it.price * it.qty;
+      t.done++;
+    } else {
+      t.planned += it.kcal * it.qty;
+    }
+  }
+  return t;
+}
+
+function itemFromFood(f, qty) {
+  return { foodId: f.id, name: f.name, kcal: f.kcal, protein: f.protein, price: f.price, qty, done: false };
+}
+
+function prefillFoodDay(iso) {
+  const dates = Object.keys(data.foodDays)
+    .filter(d => d < iso && data.foodDays[d].items.some(i => i.done))
+    .sort().reverse().slice(0, 7);
+  if (!dates.length) {
+    foodSource = 'your inventory';
+    return { items: data.foods.map(f => itemFromFood(f, 1)) };
+  }
+  // 3 of 7, scaled down while there are fewer than 7 logged days to look at.
+  const need = Math.ceil(dates.length * 3 / 7);
+  const seen = new Map(); // key -> { count, item: most recent occurrence }
+  for (const d of dates) {
+    const today = new Set();
+    for (const it of data.foodDays[d].items) {
+      const k = foodKey(it);
+      if (!it.done || today.has(k)) continue;
+      today.add(k);
+      const e = seen.get(k);
+      if (e) e.count++;
+      else seen.set(k, { count: 1, item: it });
+    }
+  }
+  const inv = new Map(data.foods.map(f => [f.id, f]));
+  foodSource = 'what you usually eat';
+  return {
+    items: [...seen.values()].filter(e => e.count >= need).map(e => {
+      const f = e.item.foodId && inv.get(e.item.foodId);
+      // Current inventory numbers when the item still exists there, else the last logged copy.
+      return f ? itemFromFood(f, e.item.qty) : Object.assign({}, e.item, { done: false });
+    }),
+  };
+}
+
+function showFood(iso) {
+  foodDate = iso || todayISO();
+  foodDay = data.foodDays[foodDate] || prefillFoodDay(foodDate);
+  $('food-add').value = '';
+  $('food-suggestions').hidden = true;
+  renderFood();
+  showView('view-food');
+}
+
+function commitFood() {
+  data.foodDays[foodDate] = foodDay;
+  saveData(data);
+}
+
+function renderFood() {
+  const today = todayISO();
+  $('food-date').textContent = (foodDate === today ? 'Today, ' : '') + prettyDate(foodDate);
+  $('food-next').disabled = foodDate >= today;
+
+  const stored = !!data.foodDays[foodDate];
+  $('food-note').textContent = stored
+    ? 'Tick what you ate. Tap an item to edit it for this day.'
+    : foodDay.items.length
+      ? 'Prefilled from ' + foodSource + '. Tick what you ate, tap an item to edit it.'
+      : 'Nothing to prefill yet. Add items below.';
+
+  // Summary: eaten vs goal, like the sheet's TOTAL and REMAINING rows.
+  const t = foodTotals(foodDay);
+  const kcalGoal = data.settings.kcalGoal, proteinGoal = data.settings.proteinGoal;
+  const left = Math.round(kcalGoal - t.kcal);
+  const sum = $('food-summary');
+  sum.innerHTML = '';
+  const big = document.createElement('div');
+  big.className = 'food-big';
+  const kcal = document.createElement('span');
+  kcal.className = 'food-kcal';
+  kcal.textContent = Math.round(t.kcal);
+  const goal = document.createElement('span');
+  goal.className = 'food-goal';
+  goal.textContent = '/ ' + kcalGoal + ' kcal';
+  const leftEl = document.createElement('span');
+  leftEl.className = 'food-left' + (left < 0 ? ' over' : '');
+  leftEl.textContent = left < 0 ? (-left) + ' over' : left + ' left';
+  big.append(kcal, goal, leftEl);
+  const bar = document.createElement('div');
+  bar.className = 'food-bar' + (left < 0 ? ' over' : '');
+  const fill = document.createElement('div');
+  fill.style.width = Math.max(0, Math.min(100, t.kcal / kcalGoal * 100)) + '%';
+  bar.appendChild(fill);
+  const sub = document.createElement('div');
+  sub.className = 'food-sub';
+  const met = t.protein >= proteinGoal;
+  const protein = document.createElement('span');
+  protein.innerHTML = 'Protein <strong></strong> / ' + proteinGoal + 'g' + (met ? ' <span class="met">met</span>' : '');
+  protein.querySelector('strong').textContent = fmtNum(t.protein);
+  const cost = document.createElement('span');
+  cost.innerHTML = 'Cost <strong></strong>';
+  cost.querySelector('strong').textContent = '₹' + fmtNum(t.price);
+  sub.append(protein, cost);
+  if (t.planned) {
+    const planned = document.createElement('span');
+    planned.textContent = Math.round(t.planned) + ' kcal not ticked';
+    sub.appendChild(planned);
+  }
+  sum.append(big, bar, sub);
+
+  const weightWrap = $('food-weight');
+  weightWrap.innerHTML = '';
+  weightWrap.appendChild(buildWeightCard(foodDate, foodDate === today ? 'Weight today' : 'Weight this day',
+    () => showFood(foodDate)));
+
+  const list = $('food-list');
+  list.innerHTML = '';
+  foodDay.items.forEach((it, i) => {
+    const row = document.createElement('div');
+    row.className = 'food-row' + (it.done ? ' done' : '');
+
+    const tick = document.createElement('button');
+    tick.className = 'set-tick';
+    tick.textContent = '✓';
+    tick.setAttribute('aria-label', (it.done ? 'Untick ' : 'Tick ') + it.name);
+    tick.setAttribute('aria-pressed', String(it.done));
+    tick.addEventListener('click', () => { it.done = !it.done; commitFood(); renderFood(); });
+
+    const main = document.createElement('button');
+    main.className = 'food-main';
+    const name = document.createElement('span');
+    name.className = 'food-name';
+    name.textContent = it.name;
+    const meta = document.createElement('span');
+    meta.className = 'food-meta';
+    meta.textContent = fmtFoodMeta(it.kcal * it.qty, it.protein * it.qty, it.price * it.qty);
+    main.append(name, meta);
+    main.addEventListener('click', () => editDayItem(i));
+
+    const qty = document.createElement('div');
+    qty.className = 'qty';
+    const minus = document.createElement('button');
+    minus.textContent = '−';
+    minus.setAttribute('aria-label', 'Less ' + it.name);
+    const val = document.createElement('span');
+    val.textContent = '×' + fmtNum(it.qty);
+    const plus = document.createElement('button');
+    plus.textContent = '+';
+    plus.setAttribute('aria-label', 'More ' + it.name);
+    const step = d => {
+      it.qty = Math.max(0.5, Math.min(20, it.qty + d));
+      commitFood();
+      renderFood();
+    };
+    minus.addEventListener('click', () => step(-0.5));
+    plus.addEventListener('click', () => step(0.5));
+    qty.append(minus, val, plus);
+
+    row.append(tick, main, qty);
+    list.appendChild(row);
+  });
+  renderFoodGraph();
+}
+
+/* Calorie goal graph: a GitHub-style grid of the last 20 weeks, one column
+   per week (Monday at the top). A logged day (at least one ticked item) is
+   green when its total is at or under the calorie goal and red when over;
+   unlogged days stay grey. Tapping a square opens that day. */
+
+const GRAPH_WEEKS = 20;
+
+function renderFoodGraph() {
+  const card = $('food-graph');
+  card.innerHTML = '';
+  const today = todayISO();
+  const goal = data.settings.kcalGoal;
+  const start = addDaysISO(weekStartISO(today), -7 * (GRAPH_WEEKS - 1));
+
+  const head = document.createElement('div');
+  head.className = 'aux-head';
+  const title = document.createElement('span');
+  title.className = 'aux-title';
+  title.textContent = 'Calorie goal';
+  head.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'goal-grid';
+  let met = 0, over = 0;
+  for (let n = 0; n < GRAPH_WEEKS * 7; n++) {
+    const iso = addDaysISO(start, n);
+    const sq = document.createElement('div');
+    let cls = 'goal-sq';
+    if (iso > today) {
+      cls += ' future';
+    } else {
+      sq.dataset.iso = iso;
+      const day = data.foodDays[iso];
+      let state = 'not logged';
+      if (day && day.items.some(i => i.done)) {
+        const kcal = Math.round(foodTotals(day).kcal);
+        if (kcal <= goal) { cls += ' met'; met++; state = kcal + ' kcal, goal met'; }
+        else { cls += ' over'; over++; state = kcal + ' kcal, over goal'; }
+      }
+      sq.title = prettyDate(iso) + ': ' + state;
+    }
+    if (iso === foodDate) cls += ' shown';
+    sq.className = cls;
+    grid.appendChild(sq);
+  }
+  grid.setAttribute('role', 'img');
+  grid.setAttribute('aria-label', 'Last ' + GRAPH_WEEKS + ' weeks: calorie goal met on ' + met +
+    ' days, not met on ' + over + ' days.');
+  grid.addEventListener('click', e => {
+    const iso = e.target.dataset && e.target.dataset.iso;
+    if (iso && iso !== foodDate) showFood(iso);
+  });
+
+  const legend = document.createElement('div');
+  legend.className = 'goal-legend';
+  const key = (cls, text) => {
+    const s = document.createElement('span');
+    const sq = document.createElement('span');
+    sq.className = 'goal-sq ' + cls;
+    s.append(sq, document.createTextNode(text));
+    legend.appendChild(s);
+  };
+  key('met', 'Met ' + met);
+  key('over', 'Not met ' + over);
+  key('', 'Not logged');
+  const span = document.createElement('span');
+  span.textContent = 'Last ' + GRAPH_WEEKS + ' weeks · goal ' + goal + ' kcal';
+  legend.appendChild(span);
+
+  card.append(head, grid, legend);
+}
+
+function editDayItem(i) {
+  const it = foodDay.items[i];
+  const inInventory = !!it.foodId && data.foods.some(f => f.id === it.foodId);
+  openFoodModal({
+    title: 'Edit item',
+    values: it,
+    check: { label: inInventory ? 'Also update my inventory' : 'Save to my inventory', checked: false },
+    saveLabel: 'Save',
+    onSave(v, checked) {
+      Object.assign(it, v);
+      if (checked) {
+        const f = data.foods.find(x => x.id === it.foodId);
+        if (f) Object.assign(f, v);
+        else {
+          it.foodId = newFoodId();
+          data.foods.push(Object.assign({ id: it.foodId }, v));
+        }
+      }
+      commitFood();
+      renderFood();
+    },
+    dangerLabel: 'Remove',
+    onDanger() {
+      const day = foodDay, date = foodDate;
+      day.items.splice(i, 1);
+      commitFood();
+      renderFood();
+      toastUndo('Removed ' + it.name, () => {
+        day.items.splice(i, 0, it);
+        data.foodDays[date] = day;
+        saveData(data);
+        if (foodDate === date) renderFood();
+      });
+    },
+  });
+}
+
+/* Add item: inventory matches, most used first, plus a one-off or new entry. */
+
+function foodUsage() {
+  const counts = new Map();
+  for (const d of Object.keys(data.foodDays)) {
+    for (const it of data.foodDays[d].items) {
+      if (it.done && it.foodId) counts.set(it.foodId, (counts.get(it.foodId) || 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function renderFoodSuggestions() {
+  const box = $('food-suggestions');
+  const q = $('food-add').value.trim();
+  const ql = q.toLowerCase();
+  box.innerHTML = '';
+
+  const usage = foodUsage();
+  const matches = data.foods
+    .filter(f => f.name.toLowerCase().includes(ql))
+    .sort((a, b) => (usage.get(b.id) || 0) - (usage.get(a.id) || 0) || a.name.localeCompare(b.name))
+    .slice(0, 8);
+  for (const f of matches) {
+    const b = document.createElement('button');
+    const meta = document.createElement('span');
+    meta.className = 'sug-meta';
+    meta.textContent = Math.round(f.kcal) + ' kcal · ' + fmtNum(f.protein) + 'g';
+    b.append(meta, document.createTextNode(f.name));
+    b.addEventListener('click', () => {
+      const item = itemFromFood(f, 1);
+      item.done = true; // adding by hand means you ate it
+      foodDay.items.push(item);
+      commitFood();
+      $('food-add').value = '';
+      box.hidden = true;
+      renderFood();
+    });
+    box.appendChild(b);
+  }
+
+  if (q && !data.foods.some(f => f.name.toLowerCase() === ql)) {
+    const b = document.createElement('button');
+    b.className = 'add-new';
+    b.textContent = '+ Add “' + q + '” as a new item';
+    b.addEventListener('click', () => {
+      box.hidden = true;
+      openFoodModal({
+        title: 'New item',
+        values: { name: q, kcal: '', protein: '', price: '' },
+        check: { label: 'Save to my inventory', checked: true },
+        saveLabel: 'Add',
+        onSave(v, checked) {
+          const item = Object.assign({ foodId: null, qty: 1, done: true }, v);
+          if (checked) {
+            item.foodId = newFoodId();
+            data.foods.push(Object.assign({ id: item.foodId }, v));
+          }
+          foodDay.items.push(item);
+          commitFood();
+          $('food-add').value = '';
+          renderFood();
+        },
+      });
+    });
+    box.appendChild(b);
+  }
+  box.hidden = !box.children.length;
+}
+
+$('food-add').addEventListener('input', renderFoodSuggestions);
+$('food-add').addEventListener('focus', renderFoodSuggestions);
+document.addEventListener('click', e => {
+  if (!e.target.closest('#food-add-wrap')) $('food-suggestions').hidden = true;
+});
+
+$('food-back').addEventListener('click', showHome);
+$('food-prev').addEventListener('click', () => showFood(addDaysISO(foodDate, -1)));
+$('food-next').addEventListener('click', () => {
+  if (foodDate < todayISO()) showFood(addDaysISO(foodDate, 1));
+});
+
+/* Item editor, shared by the day view and the inventory. */
+
+let foodModalOpts = null;
+
+function openFoodModal(o) {
+  foodModalOpts = o;
+  $('fm-title').textContent = o.title;
+  $('fm-name').value = o.values.name || '';
+  for (const k of ['kcal', 'protein', 'price']) {
+    const v = o.values[k];
+    $('fm-' + k).value = v === '' || v == null ? '' : fmtNum(v);
+  }
+  $('fm-check-wrap').hidden = !o.check;
+  if (o.check) {
+    $('fm-check-label').textContent = o.check.label;
+    $('fm-check').checked = o.check.checked;
+  }
+  $('fm-danger').hidden = !o.dangerLabel;
+  $('fm-danger').textContent = o.dangerLabel || '';
+  $('fm-save').textContent = o.saveLabel || 'Save';
+  $('food-modal').hidden = false;
+  if (!$('fm-name').value) $('fm-name').focus();
+  else if ($('fm-kcal').value === '') $('fm-kcal').focus();
+}
+
+function closeFoodModal() {
+  $('food-modal').hidden = true;
+  foodModalOpts = null;
+}
+
+$('fm-save').addEventListener('click', () => {
+  const name = $('fm-name').value.trim();
+  if (!name) { toast('Give the item a name'); return; }
+  const field = id => finiteOr(parseFloat($(id).value.trim().replace(',', '.')), 0);
+  const v = { name, kcal: field('fm-kcal'), protein: field('fm-protein'), price: field('fm-price') };
+  const o = foodModalOpts, checked = $('fm-check').checked;
+  closeFoodModal();
+  o.onSave(v, !!o.check && checked);
+});
+$('fm-danger').addEventListener('click', () => {
+  const o = foodModalOpts;
+  closeFoodModal();
+  o.onDanger();
+});
+$('fm-close').addEventListener('click', closeFoodModal);
+$('food-modal').addEventListener('click', e => {
+  if (e.target === $('food-modal')) closeFoodModal();
+});
+
+/* Coach export for one day: ticked items, totals against the goals, body weight. */
+
+function buildFoodText(iso) {
+  const day = data.foodDays[iso];
+  const unit = data.settings.unit;
+  const lines = ['Food Log: ' + prettyDate(iso)];
+  const w = data.weights[iso];
+  if (w != null) {
+    const week = weeklyWeights().find(x => x.start === weekStartISO(iso));
+    lines.push('Body weight: ' + fmtNum(w) + unit + ' (week average ' + fmtNum(week.avg) + unit + ')');
+  }
+  lines.push('');
+  const eaten = day ? day.items.filter(i => i.done) : [];
+  eaten.forEach((it, i) => {
+    lines.push((i + 1) + '. ' + it.name + (it.qty !== 1 ? ' ×' + fmtNum(it.qty) : '') + ': ' +
+      Math.round(it.kcal * it.qty) + ' kcal, ' + fmtNum(it.protein * it.qty) + 'g protein');
+  });
+  const t = foodTotals(day);
+  const left = Math.round(data.settings.kcalGoal - t.kcal);
+  const short = data.settings.proteinGoal - t.protein;
+  lines.push('Total: ' + Math.round(t.kcal) + ' kcal (goal ' + data.settings.kcalGoal + ', ' +
+    (left < 0 ? (-left) + ' over' : left + ' left') + ')');
+  lines.push('Protein: ' + fmtNum(t.protein) + 'g (goal ' + data.settings.proteinGoal + 'g, ' +
+    (short <= 0 ? 'met' : 'short by ' + fmtNum(short) + 'g') + ')');
+  lines.push('Cost: ₹' + fmtNum(t.price));
+  return lines.join('\n');
+}
+
+function foodTextOrToast() {
+  const day = data.foodDays[foodDate];
+  if (!(day && day.items.some(i => i.done)) && data.weights[foodDate] == null) {
+    toast('Nothing to copy yet. Tick what you ate first');
+    return null;
+  }
+  return buildFoodText(foodDate);
+}
+
+$('food-copy').addEventListener('click', async () => {
+  const text = foodTextOrToast();
+  if (!text) return;
+  toast(await copyText(text) ? 'Copied. Paste it to your coach' : 'Copy failed, try again');
+});
+$('food-share').addEventListener('click', () => {
+  const text = foodTextOrToast();
+  if (text) shareLog(text);
+});
+
+/* ---------------- Inventory (master list) ---------------- */
+
+function showInventory(back) {
+  subReturn = back;
+  renderInventory();
+  showView('view-inventory');
+}
+
+function renderInventory() {
+  const body = $('inventory-body');
+  body.innerHTML = '';
+  if (!data.foods.length) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'No items yet. Add the things you eat most days.';
+    body.appendChild(p);
+    return;
+  }
+  const sorted = data.foods.slice().sort((a, b) => a.name.localeCompare(b.name));
+  for (const f of sorted) {
+    const b = document.createElement('button');
+    b.className = 'inv-row';
+    const name = document.createElement('span');
+    name.className = 'food-name';
+    name.textContent = f.name;
+    const meta = document.createElement('span');
+    meta.className = 'food-meta';
+    meta.textContent = fmtFoodMeta(f.kcal, f.protein, f.price);
+    b.append(name, meta);
+    b.addEventListener('click', () => openFoodModal({
+      title: 'Edit item',
+      values: f,
+      saveLabel: 'Save',
+      onSave(v) { Object.assign(f, v); saveData(data); renderInventory(); },
+      dangerLabel: 'Delete',
+      onDanger() {
+        const at = data.foods.indexOf(f);
+        data.foods.splice(at, 1);
+        saveData(data);
+        renderInventory();
+        toastUndo('Deleted ' + f.name, () => {
+          data.foods.splice(at, 0, f);
+          saveData(data);
+          renderInventory();
+        });
+      },
+    }));
+    body.appendChild(b);
+  }
+}
+
+$('inventory-add').addEventListener('click', () => openFoodModal({
+  title: 'New item',
+  values: { name: '', kcal: '', protein: '', price: '' },
+  saveLabel: 'Add',
+  onSave(v) {
+    data.foods.push(Object.assign({ id: newFoodId() }, v));
+    saveData(data);
+    renderInventory();
+  },
+}));
+$('food-inventory').addEventListener('click', () => showInventory(() => showFood(foodDate)));
+$('inventory-back').addEventListener('click', () => (subReturn || showHome)());
+
+/* ---------------- Body weight ----------------
+   One number per day. Progress is read weekly (Monday to Sunday) as the
+   average of that week's entries, which smooths out day-to-day noise. */
+
+function buildWeightCard(iso, label, back) {
+  const unit = data.settings.unit;
+  const card = document.createElement('div');
+  card.className = 'aux-card weight-row';
+  const lab = document.createElement('span');
+  lab.className = 'aux-label';
+  lab.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.inputMode = 'decimal';
+  input.placeholder = '0.0';
+  input.autocomplete = 'off';
+  input.setAttribute('aria-label', label + ' in ' + unit);
+  const show = () => { input.value = data.weights[iso] != null ? fmtNum(data.weights[iso]) : ''; };
+  show();
+  input.addEventListener('change', () => {
+    const raw = input.value.trim().replace(',', '.');
+    if (!raw) {
+      if (data.weights[iso] != null) {
+        delete data.weights[iso];
+        saveData(data);
+        toast('Weight removed');
+      }
+      return;
+    }
+    const v = Math.round(parseFloat(raw) * 10) / 10;
+    if (!(v >= 20 && v <= 400)) {
+      toast('Enter a weight between 20 and 400');
+      show();
+      return;
+    }
+    data.weights[iso] = v;
+    saveData(data);
+    show();
+    toast('Weight logged: ' + fmtNum(v) + unit);
+  });
+  const u = document.createElement('span');
+  u.className = 'weight-unit';
+  u.textContent = unit;
+  const link = document.createElement('button');
+  link.className = 'weight-link';
+  link.textContent = 'Weekly ›';
+  link.addEventListener('click', () => showWeight(back));
+  card.append(lab, input, u, link);
+  return card;
+}
+
+function weekStartISO(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return addDaysISO(iso, -((new Date(y, m - 1, d).getDay() + 6) % 7)); // Monday-first
+}
+
+// Weeks that have at least one entry, oldest first: { start, avg, n, change }.
+// change compares with the previous week that has entries.
+function weeklyWeights() {
+  const weeks = new Map();
+  for (const iso of Object.keys(data.weights).sort()) {
+    const start = weekStartISO(iso);
+    if (!weeks.has(start)) weeks.set(start, []);
+    weeks.get(start).push(data.weights[iso]);
+  }
+  const out = [];
+  let prev = null;
+  for (const [start, vals] of weeks) {
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    out.push({ start, avg, n: vals.length, change: prev == null ? null : avg - prev });
+    prev = avg;
+  }
+  return out;
+}
+
+function fmtChange(n) {
+  const r = Math.round(n * 10) / 10;
+  return (r > 0 ? '+' : '') + r;
+}
+
+function shortDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function showWeight(back) {
+  subReturn = back;
+  renderWeight();
+  showView('view-weight');
+}
+
+function renderWeight() {
+  const unit = data.settings.unit;
+  const weeks = weeklyWeights();
+  const stats = $('weight-stats'), chart = $('weight-chart'), body = $('weight-body');
+  stats.innerHTML = '';
+  chart.innerHTML = '';
+  body.innerHTML = '';
+
+  if (!weeks.length) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'No weight logged yet. Enter today’s weight on the home screen.';
+    body.appendChild(p);
+    return;
+  }
+
+  const last = weeks[weeks.length - 1];
+  const cell = (num, label) => {
+    const c = document.createElement('div');
+    c.className = 'streak-cell';
+    const n = document.createElement('span');
+    n.className = 'streak-num';
+    n.textContent = num;
+    const l = document.createElement('span');
+    l.className = 'streak-label';
+    l.textContent = label;
+    c.append(n, l);
+    stats.appendChild(c);
+  };
+  const thisWeek = last.start === weekStartISO(todayISO());
+  cell(fmtNum(last.avg), (thisWeek ? 'This week' : 'Latest week') + ' avg, ' + unit);
+  cell(last.change == null ? '·' : fmtChange(last.change), 'vs week before');
+  cell(weeks.length > 1 ? fmtChange(last.avg - weeks[0].avg) : '·', 'Since first week');
+
+  if (weeks.length > 1) {
+    chart.className = 'aux-card';
+    chart.innerHTML = sparklineSVG(weeks.slice(-26).map(w => Math.round(w.avg * 10) / 10), unit, 'Weekly average weight');
+  } else {
+    chart.className = '';
+  }
+
+  const section = (title) => {
+    const card = document.createElement('div');
+    card.className = 'aux-card';
+    const head = document.createElement('div');
+    head.className = 'aux-head';
+    const t = document.createElement('span');
+    t.className = 'aux-title';
+    t.textContent = title;
+    head.appendChild(t);
+    card.appendChild(head);
+    body.appendChild(card);
+    return card;
+  };
+
+  const weekly = section('Weekly average');
+  for (const w of weeks.slice(-26).reverse()) {
+    const row = document.createElement('div');
+    row.className = 'week-row';
+    const d = document.createElement('span');
+    d.className = 'w-date';
+    d.textContent = 'Week of ' + shortDate(w.start);
+    const v = document.createElement('span');
+    v.className = 'w-val';
+    v.textContent = fmtNum(w.avg) + ' ' + unit;
+    const c = document.createElement('span');
+    c.className = 'w-chg';
+    c.textContent = w.change == null ? '' : fmtChange(w.change);
+    const n = document.createElement('span');
+    n.className = 'w-n';
+    n.textContent = w.n + (w.n === 1 ? ' day' : ' days');
+    row.append(d, v, c, n);
+    weekly.appendChild(row);
+  }
+
+  const daily = section('Daily entries');
+  const dates = Object.keys(data.weights).sort().reverse().slice(0, 21);
+  for (const iso of dates) {
+    const row = document.createElement('button');
+    row.className = 'week-row';
+    const d = document.createElement('span');
+    d.className = 'w-date';
+    d.textContent = prettyDate(iso);
+    const v = document.createElement('span');
+    v.className = 'w-val';
+    v.textContent = fmtNum(data.weights[iso]) + ' ' + unit;
+    row.append(d, v);
+    row.addEventListener('click', () => {
+      const entered = prompt('Weight on ' + prettyDate(iso) + ' (' + unit + '). Leave blank to delete:',
+        fmtNum(data.weights[iso]));
+      if (entered === null) return;
+      const raw = entered.trim().replace(',', '.');
+      if (!raw) delete data.weights[iso];
+      else {
+        const val = Math.round(parseFloat(raw) * 10) / 10;
+        if (!(val >= 20 && val <= 400)) { toast('Enter a weight between 20 and 400'); return; }
+        data.weights[iso] = val;
+      }
+      saveData(data);
+      renderWeight();
+    });
+    daily.appendChild(row);
+  }
+  const hint = document.createElement('p');
+  hint.className = 'set-hint';
+  hint.style.margin = '8px 0 0';
+  hint.textContent = 'Tap an entry to correct or delete it.';
+  daily.appendChild(hint);
+}
+
+$('weight-back').addEventListener('click', () => (subReturn || showHome)());
+
+/* ---------------- Home: food card, weight field, goals ---------------- */
+
+function renderFoodHome() {
+  const wrap = $('food-home');
+  wrap.innerHTML = '';
+  const today = todayISO();
+  const t = foodTotals(data.foodDays[today]);
+
+  const btn = document.createElement('button');
+  btn.className = 'day-card';
+  const plate = document.createElement('span');
+  plate.className = 'plate';
+  plate.setAttribute('aria-hidden', 'true');
+  const text = document.createElement('span');
+  const name = document.createElement('span');
+  name.className = 'day-name';
+  name.textContent = 'Food';
+  const sub = document.createElement('span');
+  sub.className = 'day-last';
+  sub.textContent = t.done
+    ? Math.round(t.kcal) + ' / ' + data.settings.kcalGoal + ' kcal · ' +
+      fmtNum(t.protein) + ' / ' + data.settings.proteinGoal + 'g protein'
+    : 'Nothing ticked today · goal ' + data.settings.kcalGoal + ' kcal';
+  text.append(name, document.createElement('br'), sub);
+  const chev = document.createElement('span');
+  chev.className = 'chev';
+  chev.setAttribute('aria-hidden', 'true');
+  chev.textContent = '›';
+  btn.append(plate, text, chev);
+  btn.addEventListener('click', () => showFood(today));
+  wrap.appendChild(btn);
+
+  wrap.appendChild(buildWeightCard(today, 'Weight today', showHome));
+}
+
+function renderGoalsButton() {
+  $('goals-btn').textContent = 'Food goals · ' + data.settings.kcalGoal + ' kcal / ' + data.settings.proteinGoal + 'g';
+}
+
+$('goals-btn').addEventListener('click', () => {
+  const kcal = prompt('Daily calorie goal (kcal):', data.settings.kcalGoal);
+  if (kcal === null) return;
+  const protein = prompt('Daily protein goal (g):', data.settings.proteinGoal);
+  if (protein === null) return;
+  const k = parseFloat(kcal), p = parseFloat(protein);
+  if (!(k > 0) || !(p > 0)) { toast('Goals must be numbers above zero'); return; }
+  data.settings.kcalGoal = k;
+  data.settings.proteinGoal = p;
+  saveData(data);
+  renderGoalsButton();
+  renderFoodHome();
+  toast('Goals updated');
 });
 
 /* ---------------- Install prompt ---------------- */
@@ -2706,9 +3814,10 @@ renderTzButton();
 renderUnitButton();
 renderRestButton();
 renderSyncButton();
+renderGoalsButton();
 flushGymSync();
 flushSessionSync();
-if (navigator.share) $('share-btn').hidden = false;
+if (navigator.share) { $('share-btn').hidden = false; $('food-share').hidden = false; }
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 showHome();
 </script>

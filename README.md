@@ -25,8 +25,21 @@ A workout logger for Push / Pull / Legs training, built to feed an LLM coach. In
 
 6. **Finish & Save** stores the session. Browse, re-copy, edit, or delete past sessions under **History**; the **Calendar** shows your gym days, current streak, and best streak. If the app closes mid-workout, nothing is lost: the session is autosaved as a draft and the home screen offers to resume it.
 
+## Food and weight
+
+The **Food** card on the home screen opens today's food log, modeled on a simple calorie spreadsheet: a list of items with calories, protein and price, a running total, and what is left against your daily goals.
+
+- **Inventory** is the master list of things you eat, with per-serving calories, protein and price. Editing an item never changes past days, because each day keeps its own copy of the numbers.
+- **Prefill and tick**: a new day opens prefilled (unticked) with anything you ate on at least 3 of your last 7 logged days. Tick what you ate; only ticked items count. Use the stepper for portions (×0.5, ×2), tap an item to edit it for that day, and add anything else by searching the inventory or typing a new item.
+- **Weight**: enter one number per day on the home screen. The **Weekly** view shows each Monday-to-Sunday week's average, the change from the week before, and a trend line.
+- **Calorie goal graph**: a GitHub-style grid of the last 20 weeks at the bottom of the food screen. A logged day is green when its total is at or under the calorie goal and red when over; unlogged days stay grey. Tap a square to open that day.
+- **Copy for LLM** on the food screen exports the day's ticked items, totals against goals, and body weight for the coach.
+
+Food and weight stay on the device (and in backups); website sync does not send them.
+
 ## Settings (home screen)
 
+- **Food goals**: daily calorie and protein targets (default 1800 kcal, 110g).
 - **Time zone** — auto-detects your device; pin any IANA zone for travel.
 - **Units** — kg or lb (labels new logs; saved history keeps the unit it was logged in).
 - **Rest timer** — 60s / 90s / 120s / off.
